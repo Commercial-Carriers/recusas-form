@@ -7,136 +7,48 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f0f2f5;
-      min-height: 100vh;
-    }
+    .header { background: #FFE600; padding: 14px 20px; display: flex; align-items: center; gap: 10px; }
+    .header h1 { font-size: 18px; font-weight: 700; color: #333; }
 
-    .header {
-      background: #FFE600;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .header h1 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #333;
-    }
+    .card { background: white; margin: 14px; border-radius: 14px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
 
-    .card {
-      background: white;
-      margin: 14px;
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    }
+    .motivo-badge { background: #FFE600; border-radius: 10px; padding: 14px 16px; font-weight: 700; font-size: 15px; text-align: center; margin-bottom: 10px; line-height: 1.3; }
+    .unidade-badge { background: #f5f5f5; border-radius: 8px; padding: 8px 14px; font-size: 13px; text-align: center; color: #555; margin-bottom: 14px; }
 
-    .motivo-badge {
-      background: #FFE600;
-      border-radius: 10px;
-      padding: 14px 16px;
-      font-weight: 700;
-      font-size: 15px;
-      text-align: center;
-      margin-bottom: 10px;
-      line-height: 1.3;
-    }
+    .modo-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+    .btn-modo { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 13px; font-weight: 600; cursor: pointer; color: #666; }
+    .btn-modo.ativo { border-color: #333; background: #333; color: white; }
 
-    .unidade-badge {
-      background: #f5f5f5;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 13px;
-      text-align: center;
-      color: #555;
-      margin-bottom: 16px;
-    }
+    .scanner-fisico { display: none; }
+    .scanner-fisico.visivel { display: block; }
+    .aguardando-scan { background: #f0f2f5; border: 2px dashed #bbb; border-radius: 12px; padding: 32px 20px; text-align: center; cursor: pointer; }
+    .aguardando-scan .icone { font-size: 40px; margin-bottom: 10px; }
+    .aguardando-scan .txt { font-size: 15px; color: #555; font-weight: 600; }
+    .aguardando-scan .subtxt { font-size: 12px; color: #999; margin-top: 6px; }
+    .aguardando-scan.focado { border-color: #00a650; background: #e8f5e9; }
 
-    .scan-label {
-      text-align: center;
-      color: #777;
-      font-size: 13px;
-      margin-bottom: 10px;
-    }
+    #input-scanner { position: fixed; left: -9999px; top: 0; opacity: 0; width: 1px; height: 1px; }
 
-    #reader {
-      border-radius: 10px;
-      overflow: hidden;
-      width: 100%;
-      min-height: 200px;
-      background: #000;
-    }
+    .scanner-camera { display: none; }
+    .scanner-camera.visivel { display: block; }
+    .scan-label { text-align: center; color: #777; font-size: 13px; margin-bottom: 10px; }
+    #reader { border-radius: 10px; overflow: hidden; width: 100%; min-height: 200px; background: #000; }
 
-    .id-result {
-      background: #e8f5e9;
-      border: 2px solid #43a047;
-      border-radius: 10px;
-      padding: 14px 16px;
-      text-align: center;
-      margin-top: 14px;
-      display: none;
-    }
-    .id-result .label {
-      font-size: 11px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .id-result .value {
-      font-size: 22px;
-      font-weight: 700;
-      color: #222;
-      letter-spacing: 2px;
-      margin-top: 4px;
-      word-break: break-all;
-    }
+    .id-result { background: #e8f5e9; border: 2px solid #43a047; border-radius: 10px; padding: 14px 16px; text-align: center; margin-top: 14px; display: none; }
+    .id-result .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .id-result .value { font-size: 22px; font-weight: 700; color: #222; letter-spacing: 2px; margin-top: 4px; word-break: break-all; }
 
-    .btn-confirmar {
-      display: none;
-      width: 100%;
-      padding: 18px;
-      background: #00a650;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 17px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 12px;
-      letter-spacing: 0.5px;
-    }
+    .btn-confirmar { display: none; width: 100%; padding: 18px; background: #00a650; color: white; border: none; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; margin-top: 12px; }
     .btn-confirmar:active { background: #007d3c; }
     .btn-confirmar:disabled { background: #aaa; cursor: not-allowed; }
 
-    .btn-rescan {
-      display: none;
-      width: 100%;
-      padding: 13px;
-      background: #f0f2f5;
-      color: #444;
-      border: none;
-      border-radius: 10px;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-    .btn-rescan:active { background: #ddd; }
+    .btn-rescan { display: none; width: 100%; padding: 13px; background: #f0f2f5; color: #444; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; margin-top: 8px; }
 
-    .status {
-      text-align: center;
-      padding: 18px 10px;
-      font-size: 20px;
-      font-weight: 700;
-      display: none;
-      border-radius: 10px;
-      margin-top: 12px;
-    }
-    .status.sucesso { background: #e8f5e9; color: #2e7d32; }
-    .status.erro { background: #ffebee; color: #c62828; }
+    .status { text-align: center; padding: 18px 10px; font-size: 20px; font-weight: 700; display: none; border-radius: 10px; margin-top: 12px; }
+    .status.sucesso   { background: #e8f5e9; color: #2e7d32; }
+    .status.erro      { background: #ffebee; color: #c62828; }
     .status.aguardando { background: #fff8e1; color: #795548; }
   </style>
 </head>
@@ -149,11 +61,31 @@
 
   <div class="card">
     <div class="motivo-badge" id="motivo-display">Carregando...</div>
+    <div class="unidade-badge" id="destino-display" style="display:none"></div>
     <div class="unidade-badge" id="unidade-display" style="display:none"></div>
 
-    <p class="scan-label">📷 Aponte a câmera para o código de barras do pacote</p>
+    <div class="modo-toggle">
+      <button class="btn-modo ativo" id="btn-modo-fisico" onclick="trocarModo('fisico')">🔫 Leitor físico</button>
+      <button class="btn-modo"       id="btn-modo-camera" onclick="trocarModo('camera')">📷 Câmera</button>
+    </div>
 
-    <div id="reader"></div>
+    <!-- Modo: Leitor físico -->
+    <div class="scanner-fisico visivel" id="scanner-fisico">
+      <div class="aguardando-scan" id="area-scan" onclick="focarInput()">
+        <div class="icone">🔫</div>
+        <div class="txt">Aguardando leitura...</div>
+        <div class="subtxt">Clique aqui e bipe o código de barras do pacote</div>
+      </div>
+    </div>
+
+    <!-- Modo: Câmera -->
+    <div class="scanner-camera" id="scanner-camera">
+      <p class="scan-label">📷 Aponte a câmera para o código de barras do pacote</p>
+      <div id="reader"></div>
+    </div>
+
+    <!-- Input oculto que captura o leitor físico -->
+    <input type="text" id="input-scanner" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div class="id-result" id="id-result">
       <div class="label">ID do Pacote Lido</div>
@@ -172,69 +104,121 @@
   </div>
 
   <script>
+    var WEB3FORMS_KEY = '1710cc5a-7f51-4383-95e2-f980eb576d0b';
+
     var params   = new URLSearchParams(window.location.search);
     var motivo   = params.get('motivo')  || 'Motivo não definido';
     var unidade  = params.get('unidade') || '';
+    var destino  = params.get('destino') || '';
     var pacoteId = '';
+    var modoAtual = 'fisico';
     var scanner;
+    var inputEl = document.getElementById('input-scanner');
 
-    // Preenche informações do QR Code
     document.getElementById('motivo-display').textContent = motivo;
+    if (destino) {
+      var elD = document.getElementById('destino-display');
+      elD.textContent = '🏭 Destino: ' + destino;
+      elD.style.display = 'block';
+    }
     if (unidade) {
       var el = document.getElementById('unidade-display');
       el.textContent = '📍 ' + unidade;
       el.style.display = 'block';
     }
 
-    // Inicia o scanner de código de barras
-    function iniciarScanner() {
+    // ── LEITOR FÍSICO ──────────────────────────────────────────
+    function focarInput() {
+      inputEl.value = '';
+      inputEl.focus();
+      document.getElementById('area-scan').classList.add('focado');
+    }
+
+    inputEl.addEventListener('blur', function() {
+      document.getElementById('area-scan').classList.remove('focado');
+    });
+
+    inputEl.addEventListener('focus', function() {
+      if (modoAtual === 'fisico') {
+        document.getElementById('area-scan').classList.add('focado');
+      }
+    });
+
+    // Captura Enter enviado pelo leitor físico
+    inputEl.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && inputEl.value.trim().length > 0) {
+        e.preventDefault();
+        capturarId(inputEl.value.trim());
+        inputEl.value = '';
+      }
+    });
+
+    // ── CÂMERA ─────────────────────────────────────────────────
+    function iniciarCamera() {
       scanner = new Html5Qrcode('reader');
-
-      var config = {
-        fps: 10,
-        qrbox: { width: Math.min(window.innerWidth - 60, 320), height: 100 },
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.CODE_93,
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.QR_CODE
-        ]
-      };
-
       scanner.start(
         { facingMode: 'environment' },
-        config,
-        function (decodedText) {
-          scanner.stop().then(function () {
-            pacoteId = decodedText;
-            document.getElementById('id-value').textContent = decodedText;
-            document.getElementById('id-result').style.display = 'block';
-            document.getElementById('btn-confirmar').style.display = 'block';
-            document.getElementById('btn-rescan').style.display  = 'block';
-            document.getElementById('status').style.display = 'none';
-          });
+        {
+          fps: 10,
+          qrbox: { width: Math.min(window.innerWidth - 60, 320), height: 100 },
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.CODE_93,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.QR_CODE
+          ]
         },
-        function () { /* erro de leitura — ignora */ }
+        function(decodedText) {
+          scanner.stop().then(function() { capturarId(decodedText); });
+        },
+        function() {}
       );
     }
 
-    // ⚠️ Substitua pelo seu Access Key do web3forms.com
-    var WEB3FORMS_KEY = '1710cc5a-7f51-4383-95e2-f980eb576d0b';
+    function pararCamera() {
+      if (scanner) { scanner.stop().catch(function(){}); scanner = null; }
+    }
 
-    // Confirma e envia para o Web3Forms
+    // ── TROCA DE MODO ──────────────────────────────────────────
+    function trocarModo(modo) {
+      modoAtual = modo;
+      resetarUI();
+      if (modo === 'fisico') {
+        document.getElementById('scanner-fisico').classList.add('visivel');
+        document.getElementById('scanner-camera').classList.remove('visivel');
+        document.getElementById('btn-modo-fisico').classList.add('ativo');
+        document.getElementById('btn-modo-camera').classList.remove('ativo');
+        pararCamera();
+        focarInput();
+      } else {
+        document.getElementById('scanner-camera').classList.add('visivel');
+        document.getElementById('scanner-fisico').classList.remove('visivel');
+        document.getElementById('btn-modo-camera').classList.add('ativo');
+        document.getElementById('btn-modo-fisico').classList.remove('ativo');
+        iniciarCamera();
+      }
+    }
+
+    // ── CAPTURA DO ID ──────────────────────────────────────────
+    function capturarId(id) {
+      pacoteId = id;
+      document.getElementById('id-value').textContent = id;
+      document.getElementById('id-result').style.display  = 'block';
+      document.getElementById('btn-confirmar').style.display = 'block';
+      document.getElementById('btn-rescan').style.display = 'block';
+      document.getElementById('status').style.display     = 'none';
+    }
+
+    // ── ENVIO ──────────────────────────────────────────────────
     function confirmar() {
       document.getElementById('btn-confirmar').disabled = true;
       document.getElementById('btn-rescan').style.display = 'none';
-
       mostrarStatus('aguardando', '⏳ Registrando...');
 
       var agora = new Date();
-      var data = agora.toLocaleDateString('pt-BR');
-      var hora = agora.toLocaleTimeString('pt-BR');
-
       fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -243,18 +227,19 @@
           subject: 'Recusa: ' + motivo,
           'ID do Pacote': pacoteId,
           'Motivo': motivo,
+          'Destino': destino,
           'Unidade': unidade,
-          'Data': data,
-          'Hora': hora
+          'Data': agora.toLocaleDateString('pt-BR'),
+          'Hora': agora.toLocaleTimeString('pt-BR')
         })
       })
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (data.success) {
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
           mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-          setTimeout(function () { resetar(); }, 2500);
+          setTimeout(function() { resetar(); }, 2500);
         } else {
-          mostrarStatus('erro', '❌ Erro ao registrar. Tente novamente.');
+          mostrarStatus('erro', '❌ Erro. Tente novamente.');
           document.getElementById('btn-confirmar').disabled = false;
           document.getElementById('btn-rescan').style.display = 'block';
         }
@@ -266,25 +251,23 @@
       });
     }
 
-    // Lê novamente sem enviar
     function rescan() {
-      pacoteId = '';
-      document.getElementById('id-result').style.display   = 'none';
-      document.getElementById('btn-confirmar').style.display = 'none';
-      document.getElementById('btn-rescan').style.display  = 'none';
-      document.getElementById('status').style.display      = 'none';
-      iniciarScanner();
+      resetarUI();
+      if (modoAtual === 'fisico') { focarInput(); } else { iniciarCamera(); }
     }
 
-    // Reseta tudo após sucesso
     function resetar() {
+      resetarUI();
+      if (modoAtual === 'fisico') { focarInput(); } else { iniciarCamera(); }
+    }
+
+    function resetarUI() {
       pacoteId = '';
       document.getElementById('id-result').style.display    = 'none';
       document.getElementById('btn-confirmar').style.display = 'none';
       document.getElementById('btn-confirmar').disabled     = false;
       document.getElementById('btn-rescan').style.display   = 'none';
       document.getElementById('status').style.display       = 'none';
-      iniciarScanner();
     }
 
     function mostrarStatus(tipo, msg) {
@@ -294,7 +277,7 @@
       el.style.display = 'block';
     }
 
-    window.onload = function () { iniciarScanner(); };
+    window.onload = function() { focarInput(); };
   </script>
 </body>
 </html>
