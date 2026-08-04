@@ -150,7 +150,7 @@
     inputEl.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && inputEl.value.trim().length > 0) {
         e.preventDefault();
-        capturarId(inputEl.value.trim());
+        processarScan(inputEl.value.trim());
         inputEl.value = '';
       }
     });
@@ -174,7 +174,7 @@
           ]
         },
         function(decodedText) {
-          scanner.stop().then(function() { capturarId(decodedText); });
+          scanner.stop().then(function() { processarScan(decodedText); });
         },
         function() {}
       );
@@ -204,7 +204,53 @@
       }
     }
 
-    // ── CAPTURA DO ID ──────────────────────────────────────────
+    // ── MAPEAMENTO DE CÓDIGOS CURTOS → MOTIVO ─────────────────
+    // Formato do barcode: DESTINO-COD (ex: IMIHUB1-R01)
+    var mapaMotivos = {
+      'R01': 'Tipo de produto não aceito pela transportadora',
+      'R02': 'Produto restrito ou proibido para transporte',
+      'R03': 'Pacote avariado / danificado',
+      'R04': 'Embalagem inadequada',
+      'R05': 'Divergência de dados (etiqueta x sistema)',
+      'R06': 'Vazamento líquido'
+    };
+
+    // ── CAPTURA INTELIGENTE ────────────────────────────────────
+    // Detecta se o scan é um código de motivo (ex: IMIHUB1-R01)
+    // ou um código de pacote (ex: 47626234490)
+    function processarScan(texto) {
+      // Verifica se é um QR Code com URL completa
+      if (texto.indexOf('?motivo=') !== -1) {
+        var tempParams = new URLSearchParams(texto.split('?')[1]);
+        motivo  = decodeURIComponent(tempParams.get('motivo')  || motivo);
+        destino = decodeURIComponent(tempParams.get('destino') || destino);
+        unidade = decodeURIComponent(tempParams.get('unidade') || unidade);
+        document.getElementById('motivo-display').textContent = motivo;
+        if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
+        mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
+        if (modoAtual === 'fisico') focarInput();
+        else iniciarCamera();
+        return;
+      }
+
+      // Verifica se é um código curto de motivo (ex: IMIHUB1-R01)
+      var partes = texto.split('-');
+      var ultimaParte = partes[partes.length - 1];
+      if (mapaMotivos[ultimaParte]) {
+        destino = partes.slice(0, partes.length - 1).join('-');
+        motivo  = mapaMotivos[ultimaParte];
+        document.getElementById('motivo-display').textContent = motivo;
+        if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
+        mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
+        if (modoAtual === 'fisico') focarInput();
+        else iniciarCamera();
+        return;
+      }
+
+      // Caso contrário, é o ID do pacote
+      capturarId(texto);
+    }
+
     function capturarId(id) {
       pacoteId = id;
       document.getElementById('id-value').textContent = id;
