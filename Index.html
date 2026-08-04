@@ -221,30 +221,49 @@
       );
     }
 
-    // Confirma e envia para a planilha
+    // ⚠️ Substitua pelo seu Access Key do web3forms.com
+    var WEB3FORMS_KEY = '1710cc5a-7f51-4383-95e2-f980eb576d0b';
+
+    // Confirma e envia para o Web3Forms
     function confirmar() {
       document.getElementById('btn-confirmar').disabled = true;
       document.getElementById('btn-rescan').style.display = 'none';
 
       mostrarStatus('aguardando', '⏳ Registrando...');
 
-      google.script.run
-        .withSuccessHandler(function (result) {
-          if (result.sucesso) {
-            mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-            setTimeout(function () { resetar(); }, 2500);
-          } else {
-            mostrarStatus('erro', '❌ Erro: ' + result.erro);
-            document.getElementById('btn-confirmar').disabled = false;
-            document.getElementById('btn-rescan').style.display = 'block';
-          }
+      var agora = new Date();
+      var data = agora.toLocaleDateString('pt-BR');
+      var hora = agora.toLocaleTimeString('pt-BR');
+
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject: 'Recusa: ' + motivo,
+          'ID do Pacote': pacoteId,
+          'Motivo': motivo,
+          'Unidade': unidade,
+          'Data': data,
+          'Hora': hora
         })
-        .withFailureHandler(function () {
-          mostrarStatus('erro', '❌ Falha de conexão. Tente novamente.');
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+          setTimeout(function () { resetar(); }, 2500);
+        } else {
+          mostrarStatus('erro', '❌ Erro ao registrar. Tente novamente.');
           document.getElementById('btn-confirmar').disabled = false;
           document.getElementById('btn-rescan').style.display = 'block';
-        })
-        .salvarRegistro({ id: pacoteId, motivo: motivo, unidade: unidade });
+        }
+      })
+      .catch(function() {
+        mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
+        document.getElementById('btn-confirmar').disabled = false;
+        document.getElementById('btn-rescan').style.display = 'block';
+      });
     }
 
     // Lê novamente sem enviar
