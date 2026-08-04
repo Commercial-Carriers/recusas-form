@@ -111,7 +111,9 @@
     var unidade  = params.get('unidade') || '';
     var destino  = params.get('destino') || '';
     var pacoteId = '';
-    var modoAtual = 'fisico';
+    // Detecta automaticamente: celular → câmera | desktop → leitor físico
+    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    var modoAtual = isMobile ? 'camera' : 'fisico';
     var scanner;
     var inputEl = document.getElementById('input-scanner');
 
@@ -277,7 +279,13 @@
       el.style.display = 'block';
     }
 
-    window.onload = function() { focarInput(); };
+    window.onload = function() {
+      if (isMobile) {
+        trocarModo('camera');
+      } else {
+        focarInput();
+      }
+    };
   </script>
 </body>
 </html>
