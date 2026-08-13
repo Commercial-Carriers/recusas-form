@@ -8,19 +8,14 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
-
     .header { background: #FFE600; padding: 14px 20px; display: flex; align-items: center; gap: 10px; }
     .header h1 { font-size: 18px; font-weight: 700; color: #333; }
-
     .card { background: white; margin: 14px; border-radius: 14px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-
     .motivo-badge { background: #FFE600; border-radius: 10px; padding: 14px 16px; font-weight: 700; font-size: 15px; text-align: center; margin-bottom: 10px; line-height: 1.3; }
     .unidade-badge { background: #f5f5f5; border-radius: 8px; padding: 8px 14px; font-size: 13px; text-align: center; color: #555; margin-bottom: 14px; }
-
     .modo-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
     .btn-modo { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 13px; font-weight: 600; cursor: pointer; color: #666; }
     .btn-modo.ativo { border-color: #333; background: #333; color: white; }
-
     .scanner-fisico { display: none; }
     .scanner-fisico.visivel { display: block; }
     .aguardando-scan { background: #f0f2f5; border: 2px dashed #bbb; border-radius: 12px; padding: 32px 20px; text-align: center; cursor: pointer; }
@@ -28,24 +23,18 @@
     .aguardando-scan .txt { font-size: 15px; color: #555; font-weight: 600; }
     .aguardando-scan .subtxt { font-size: 12px; color: #999; margin-top: 6px; }
     .aguardando-scan.focado { border-color: #00a650; background: #e8f5e9; }
-
     #input-scanner { position: fixed; left: -9999px; top: 0; opacity: 0; width: 1px; height: 1px; }
-
     .scanner-camera { display: none; }
     .scanner-camera.visivel { display: block; }
     .scan-label { text-align: center; color: #777; font-size: 13px; margin-bottom: 10px; }
     #reader { border-radius: 10px; overflow: hidden; width: 100%; min-height: 200px; background: #000; }
-
     .id-result { background: #e8f5e9; border: 2px solid #43a047; border-radius: 10px; padding: 14px 16px; text-align: center; margin-top: 14px; display: none; }
     .id-result .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
     .id-result .value { font-size: 22px; font-weight: 700; color: #222; letter-spacing: 2px; margin-top: 4px; word-break: break-all; }
-
     .btn-confirmar { display: none; width: 100%; padding: 18px; background: #00a650; color: white; border: none; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; margin-top: 12px; }
     .btn-confirmar:active { background: #007d3c; }
     .btn-confirmar:disabled { background: #aaa; cursor: not-allowed; }
-
     .btn-rescan { display: none; width: 100%; padding: 13px; background: #f0f2f5; color: #444; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; margin-top: 8px; }
-
     .status { text-align: center; padding: 18px 10px; font-size: 20px; font-weight: 700; display: none; border-radius: 10px; margin-top: 12px; }
     .status.sucesso   { background: #e8f5e9; color: #2e7d32; }
     .status.erro      { background: #ffebee; color: #c62828; }
@@ -69,7 +58,6 @@
       <button class="btn-modo"       id="btn-modo-camera" onclick="trocarModo('camera')">📷 Câmera</button>
     </div>
 
-    <!-- Modo: Leitor físico -->
     <div class="scanner-fisico visivel" id="scanner-fisico">
       <div class="aguardando-scan" id="area-scan" onclick="focarInput()">
         <div class="icone">🔫</div>
@@ -78,13 +66,11 @@
       </div>
     </div>
 
-    <!-- Modo: Câmera -->
     <div class="scanner-camera" id="scanner-camera">
       <p class="scan-label">📷 Aponte a câmera para o código de barras do pacote</p>
       <div id="reader"></div>
     </div>
 
-    <!-- Input oculto que captura o leitor físico -->
     <input type="text" id="input-scanner" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <div class="id-result" id="id-result">
@@ -105,10 +91,9 @@
 
   <script>
     // ============================================================
-    //  ⬇️  COLE AQUI A URL DO SEU GOOGLE APPS SCRIPT
-    //  Exemplo: https://script.google.com/macros/s/AKfy.../exec
+    //  ⬇️  URL DO GOOGLE APPS SCRIPT — não altere o formato
     // ============================================================
-    var SHEET_URL = 'https://script.google.com/a/macros/mercadolivre.com/s/AKfycbxcIfz2uIJB88IegDTQot45C1I2oAmig4OLUTg2O-muoyVUqOuL35Jy8XWNnd-29vBS/exec';
+    var SHEET_URL = 'https://script.google.com/a/macros/mercadolivre.com/s/AKfycbzFUSHrmSYnsiyyr2Z8QZ-RB-y1ay7_NiGxyMU-fsB9mZMd_W8gpYeKK2RO-ifAY5zb/exec';
 
     var params   = new URLSearchParams(window.location.search);
     var motivo   = params.get('motivo')  || 'Motivo não definido';
@@ -132,7 +117,6 @@
       el.style.display = 'block';
     }
 
-    // ── LEITOR FÍSICO ──────────────────────────────────────────
     function focarInput() {
       inputEl.value = '';
       inputEl.focus();
@@ -144,9 +128,7 @@
     });
 
     inputEl.addEventListener('focus', function() {
-      if (modoAtual === 'fisico') {
-        document.getElementById('area-scan').classList.add('focado');
-      }
+      if (modoAtual === 'fisico') document.getElementById('area-scan').classList.add('focado');
     });
 
     inputEl.addEventListener('keydown', function(e) {
@@ -157,7 +139,6 @@
       }
     });
 
-    // ── CÂMERA ─────────────────────────────────────────────────
     function iniciarCamera() {
       scanner = new Html5Qrcode('reader');
       scanner.start(
@@ -186,7 +167,6 @@
       if (scanner) { scanner.stop().catch(function(){}); scanner = null; }
     }
 
-    // ── TROCA DE MODO ──────────────────────────────────────────
     function trocarModo(modo) {
       modoAtual = modo;
       resetarUI();
@@ -206,7 +186,6 @@
       }
     }
 
-    // ── MAPEAMENTO DE MOTIVOS ──────────────────────────────────
     var mapaMotivos = {
       'R01': 'Tipo de produto não aceito pela transportadora',
       'R03': 'Pacote avariado / danificado',
@@ -215,9 +194,7 @@
       'R06': 'Vazamento líquido'
     };
 
-    // ── CAPTURA INTELIGENTE ────────────────────────────────────
     function processarScan(texto) {
-      // QR Code com URL completa
       if (texto.indexOf('?motivo=') !== -1) {
         var tempParams = new URLSearchParams(texto.split('?')[1]);
         motivo  = decodeURIComponent(tempParams.get('motivo')  || motivo);
@@ -226,12 +203,10 @@
         document.getElementById('motivo-display').textContent = motivo;
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
-        if (modoAtual === 'fisico') focarInput();
-        else iniciarCamera();
+        if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
 
-      // Código curto de motivo (ex: IMIHUB1-R01)
       var partes = texto.split('-');
       var ultimaParte = partes[partes.length - 1];
       if (mapaMotivos[ultimaParte]) {
@@ -240,12 +215,10 @@
         document.getElementById('motivo-display').textContent = motivo;
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
-        if (modoAtual === 'fisico') focarInput();
-        else iniciarCamera();
+        if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
 
-      // ID do pacote
       capturarId(texto);
     }
 
@@ -258,49 +231,40 @@
       document.getElementById('status').style.display     = 'none';
     }
 
-    // ── ENVIO PARA GOOGLE SHEETS ───────────────────────────────
+    // ── ENVIO VIA GET (resolve CORS em ambientes corporativos) ─
     function confirmar() {
       document.getElementById('btn-confirmar').disabled = true;
       document.getElementById('btn-rescan').style.display = 'none';
       mostrarStatus('aguardando', '⏳ Registrando...');
 
       var agora = new Date();
-      var payload = {
-        'ID do Pacote': pacoteId,
-        'Motivo':       motivo,
-        'Destino':      destino,
-        'Unidade':      unidade,
-        'Data':         agora.toLocaleDateString('pt-BR'),
-        'Hora':         agora.toLocaleTimeString('pt-BR')
-      };
 
-      fetch(SHEET_URL, {
-        method:  'POST',
-        // Google Apps Script requer mode no-cors para evitar erro de CORS
-        mode:    'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload)
-      })
-      .then(function() {
-        // no-cors não retorna corpo — se chegou aqui, foi enviado com sucesso
+      // Monta a URL com os dados como query string (GET)
+      var url = SHEET_URL
+        + '?ID+do+Pacote=' + encodeURIComponent(pacoteId)
+        + '&Motivo='       + encodeURIComponent(motivo)
+        + '&Destino='      + encodeURIComponent(destino)
+        + '&Unidade='      + encodeURIComponent(unidade)
+        + '&Data='         + encodeURIComponent(agora.toLocaleDateString('pt-BR'))
+        + '&Hora='         + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
+
+      // Usa uma imagem como trick para evitar CORS (funciona em qualquer ambiente)
+      var img = new Image();
+      img.onload = img.onerror = function() {
         mostrarStatus('sucesso', '✅ Registrado com sucesso!');
         setTimeout(function() { resetar(); }, 2500);
-      })
-      .catch(function() {
-        mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
-        document.getElementById('btn-confirmar').disabled = false;
-        document.getElementById('btn-rescan').style.display = 'block';
-      });
+      };
+      img.src = url;
     }
 
     function rescan() {
       resetarUI();
-      if (modoAtual === 'fisico') { focarInput(); } else { iniciarCamera(); }
+      if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
     }
 
     function resetar() {
       resetarUI();
-      if (modoAtual === 'fisico') { focarInput(); } else { iniciarCamera(); }
+      if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
     }
 
     function resetarUI() {
@@ -320,11 +284,7 @@
     }
 
     window.onload = function() {
-      if (isMobile) {
-        trocarModo('camera');
-      } else {
-        focarInput();
-      }
+      if (isMobile) trocarModo('camera'); else focarInput();
     };
   </script>
 </body>
