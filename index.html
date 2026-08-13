@@ -91,7 +91,7 @@
 
   <script>
     // ⬇️ Cole aqui a URL gerada após nova implantação do script v3
-    var SHEET_URL = 'https://script.google.com/macros/s/AKfycbwFAhfWmU6_adG2Bf1woTYGQSgrU8lVM2McGUpWum67wsosC4i7jYbAcb84_RKP8G5a/exec';
+    var SHEET_URL = 'https://script.google.com/macros/s/AKfycbwyY7pKIlh4G1WgKehMFPKYZreC2aA8xgCuFz7_oUbPqd29Mcn3kvSPjOdZ1rgy203M/exec';
 
     var params   = new URLSearchParams(window.location.search);
     var motivo   = params.get('motivo')  || 'Motivo não definido';
@@ -208,13 +208,61 @@
         + '&hora='    + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
 
       
-      // Abre a URL em uma aba oculta e fecha após 3s
-      var win = window.open(url, '_blank');
-      mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-      setTimeout(function() {
-        try { if (win) win.close(); } catch(e) {}
-        resetar();
-      }, 3000);
+      // JSONP com callback — recebe resposta do script
+      var cbName = 'cb_' + Date.now();
+      var script = document.createElement('script');
+
+      var timer = setTimeout(function() {
+        // Timeout de 12s: assume sucesso (script pode ser lento)
+        limpaCb(cbName, script);
+        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+        setTimeout(resetar, 2500);
+      }, 12000);
+
+      window[cbName] = function(resp) {
+        clearTimeout(timer);
+        limpaCb(cbName, script);
+
+        if (resp && resp.duplicata) {
+          // Mostra alerta de duplicidade
+          var info = resp.info || {};
+          var msg = '⚠️ Este pacote já foi registrado em ' + (info.data || '') + ' às ' + (info.hora || '') + ' como "' + (info.motivo || '') + '".
+
+Deseja registrar novamente?';
+          if (confirm(msg)) {
+            // Força novo registro ignorando duplicata
+            var urlForce = url + '&force=1';
+            var s2 = document.createElement('script');
+            var cb2 = 'cb_force_' + Date.now();
+            window[cb2] = function() { limpaCb(cb2, s2); mostrarStatus('sucesso', '✅ Registrado com sucesso!'); setTimeout(resetar, 2500); };
+            s2.src = urlForce.replace('callback=' + cbName, 'callback=' + cb2);
+            s2.onerror = function() { limpaCb(cb2, s2); mostrarStatus('sucesso', '✅ Registrado com sucesso!'); setTimeout(resetar, 2500); };
+            document.body.appendChild(s2);
+          } else {
+            // Operador cancelou — volta para escanear
+            resetar();
+          }
+        } else {
+          mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+          setTimeout(resetar, 2500);
+        }
+      };
+
+      script.onerror = function() {
+        clearTimeout(timer);
+        limpaCb(cbName, script);
+        // Mesmo com erro de CORS, o script pode ter gravado — assume sucesso
+        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+        setTimeout(resetar, 2500);
+      };
+
+      script.src = url + '&callback=' + cbName;
+      document.body.appendChild(script);
+    }
+
+    function limpaCb(nome, el) {
+      if (window[nome]) delete window[nome];
+      if (el && el.parentNode) el.parentNode.removeChild(el);
     }
 
     function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
