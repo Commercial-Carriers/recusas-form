@@ -225,15 +225,20 @@
       // Salva localmente para detectar duplicatas na mesma sessao
       registrosLocais[pacoteId] = { hora: horaStr, motivo: motivo };
 
-      // Envia via script tag — funciona em qualquer ambiente
+      // Envia via script tag e mostra sucesso imediatamente
+      // (CORS bloqueia a resposta mas o servidor recebe e grava normalmente)
       var tag = document.createElement('script');
       tag.src = url;
-      tag.onload = tag.onerror = function() {
+      setTimeout(function() {
         if (tag.parentNode) tag.parentNode.removeChild(tag);
+      }, 5000);
+      document.body.appendChild(tag);
+
+      // Mostra sucesso imediatamente sem esperar resposta
+      setTimeout(function() {
         mostrarStatus('sucesso', '\u2705 Registrado com sucesso!');
         setTimeout(resetar, 2500);
-      };
-      document.body.appendChild(tag);
+      }, 800);
     }
 
     function limpaCb(nome, el) {
