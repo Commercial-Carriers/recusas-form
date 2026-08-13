@@ -91,7 +91,7 @@
 
   <script>
     // ⬇️ Cole aqui a URL gerada após nova implantação do script v3
-    var SHEET_URL = 'https://script.google.com/a/macros/mercadolivre.com/s/AKfycbxq00b79ZwWnTVVgAM9YQpSO-63234l8_cnhDn8R2oe6Xh4q_VdnHgTe3spAnsuusah/exec';
+    var SHEET_URL = 'https://script.google.com/a/macros/mercadolivre.com/s/AKfycbxlgSucrh0ku64MjBzyZfg0XG9VVpMekJ2B2z0YddlNumvq1RQmltZXSBzTpvCbc7s4/exec';
 
     var params   = new URLSearchParams(window.location.search);
     var motivo   = params.get('motivo')  || 'Motivo não definido';
@@ -208,21 +208,35 @@
         + '&hora='    + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
 
       
-      // iframe oculto — contorna CORS em redes corporativas
-      var iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      iframe.onload = function() {
+      // JSONP — funciona em qualquer ambiente sem bloqueio de CORS
+      var callbackName = 'cb_' + Date.now();
+      var script = document.createElement('script');
+      var timeout = setTimeout(function() {
+        // Se demorar mais de 10s, assume sucesso (Apps Script pode ser lento)
+        if (window[callbackName]) delete window[callbackName];
+        if (script.parentNode) document.body.removeChild(script);
         mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-        setTimeout(function() { document.body.removeChild(iframe); resetar(); }, 2500);
+        setTimeout(function() { resetar(); }, 2500);
+      }, 10000);
+
+      window[callbackName] = function(resp) {
+        clearTimeout(timeout);
+        delete window[callbackName];
+        if (script.parentNode) document.body.removeChild(script);
+        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+        setTimeout(function() { resetar(); }, 2500);
       };
-      iframe.onerror = function() {
+
+      script.src = url + '&callback=' + callbackName;
+      script.onerror = function() {
+        clearTimeout(timeout);
+        delete window[callbackName];
+        if (script.parentNode) document.body.removeChild(script);
         mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
         document.getElementById('btn-confirmar').disabled = false;
         document.getElementById('btn-rescan').style.display = 'block';
-        document.body.removeChild(iframe);
       };
-      document.body.appendChild(iframe);
+      document.body.appendChild(script);
     }
 
     function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
