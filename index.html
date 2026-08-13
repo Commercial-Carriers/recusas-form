@@ -90,10 +90,8 @@
   </div>
 
   <script>
-    // ============================================================
-    //  ⬇️  URL DO GOOGLE APPS SCRIPT — não altere o formato
-    // ============================================================
-    var SHEET_URL = 'https://script.google.com/a/macros/mercadolivre.com/s/AKfycbzFUSHrmSYnsiyyr2Z8QZ-RB-y1ay7_NiGxyMU-fsB9mZMd_W8gpYeKK2RO-ifAY5zb/exec';
+    // ⬇️ Cole aqui a URL gerada após nova implantação do script v3
+    var SHEET_URL = 'https://script.google.com/a/macros/mercadolivre.com/s/AKfycbxq00b79ZwWnTVVgAM9YQpSO-63234l8_cnhDn8R2oe6Xh4q_VdnHgTe3spAnsuusah/exec';
 
     var params   = new URLSearchParams(window.location.search);
     var motivo   = params.get('motivo')  || 'Motivo não definido';
@@ -106,31 +104,16 @@
     var inputEl = document.getElementById('input-scanner');
 
     document.getElementById('motivo-display').textContent = motivo;
-    if (destino) {
-      var elD = document.getElementById('destino-display');
-      elD.textContent = '🏭 Destino: ' + destino;
-      elD.style.display = 'block';
-    }
-    if (unidade) {
-      var el = document.getElementById('unidade-display');
-      el.textContent = '📍 ' + unidade;
-      el.style.display = 'block';
-    }
+    if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
+    if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
 
     function focarInput() {
       inputEl.value = '';
       inputEl.focus();
       document.getElementById('area-scan').classList.add('focado');
     }
-
-    inputEl.addEventListener('blur', function() {
-      document.getElementById('area-scan').classList.remove('focado');
-    });
-
-    inputEl.addEventListener('focus', function() {
-      if (modoAtual === 'fisico') document.getElementById('area-scan').classList.add('focado');
-    });
-
+    inputEl.addEventListener('blur', function() { document.getElementById('area-scan').classList.remove('focado'); });
+    inputEl.addEventListener('focus', function() { if (modoAtual === 'fisico') document.getElementById('area-scan').classList.add('focado'); });
     inputEl.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && inputEl.value.trim().length > 0) {
         e.preventDefault();
@@ -141,42 +124,22 @@
 
     function iniciarCamera() {
       scanner = new Html5Qrcode('reader');
-      scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: Math.min(window.innerWidth - 60, 320), height: 100 },
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.CODE_93,
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.ITF,
-            Html5QrcodeSupportedFormats.QR_CODE
-          ]
-        },
-        function(decodedText) {
-          scanner.stop().then(function() { processarScan(decodedText); });
-        },
-        function() {}
-      );
+      scanner.start({ facingMode: 'environment' }, {
+        fps: 10,
+        qrbox: { width: Math.min(window.innerWidth - 60, 320), height: 100 },
+        formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_93, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.ITF, Html5QrcodeSupportedFormats.QR_CODE]
+      }, function(txt) { scanner.stop().then(function() { processarScan(txt); }); }, function() {});
     }
-
-    function pararCamera() {
-      if (scanner) { scanner.stop().catch(function(){}); scanner = null; }
-    }
+    function pararCamera() { if (scanner) { scanner.stop().catch(function(){}); scanner = null; } }
 
     function trocarModo(modo) {
-      modoAtual = modo;
-      resetarUI();
+      modoAtual = modo; resetarUI();
       if (modo === 'fisico') {
         document.getElementById('scanner-fisico').classList.add('visivel');
         document.getElementById('scanner-camera').classList.remove('visivel');
         document.getElementById('btn-modo-fisico').classList.add('ativo');
         document.getElementById('btn-modo-camera').classList.remove('ativo');
-        pararCamera();
-        focarInput();
+        pararCamera(); focarInput();
       } else {
         document.getElementById('scanner-camera').classList.add('visivel');
         document.getElementById('scanner-fisico').classList.remove('visivel');
@@ -196,59 +159,55 @@
 
     function processarScan(texto) {
       if (texto.indexOf('?motivo=') !== -1) {
-        var tempParams = new URLSearchParams(texto.split('?')[1]);
-        motivo  = decodeURIComponent(tempParams.get('motivo')  || motivo);
-        destino = decodeURIComponent(tempParams.get('destino') || destino);
-        unidade = decodeURIComponent(tempParams.get('unidade') || unidade);
+        var tp = new URLSearchParams(texto.split('?')[1]);
+        motivo  = decodeURIComponent(tp.get('motivo')  || motivo);
+        destino = decodeURIComponent(tp.get('destino') || destino);
+        unidade = decodeURIComponent(tp.get('unidade') || unidade);
         document.getElementById('motivo-display').textContent = motivo;
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
-
       var partes = texto.split('-');
-      var ultimaParte = partes[partes.length - 1];
-      if (mapaMotivos[ultimaParte]) {
+      var ultima = partes[partes.length - 1];
+      if (mapaMotivos[ultima]) {
         destino = partes.slice(0, partes.length - 1).join('-');
-        motivo  = mapaMotivos[ultimaParte];
+        motivo  = mapaMotivos[ultima];
         document.getElementById('motivo-display').textContent = motivo;
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
-
       capturarId(texto);
     }
 
     function capturarId(id) {
       pacoteId = id;
       document.getElementById('id-value').textContent = id;
-      document.getElementById('id-result').style.display  = 'block';
+      document.getElementById('id-result').style.display = 'block';
       document.getElementById('btn-confirmar').style.display = 'block';
       document.getElementById('btn-rescan').style.display = 'block';
-      document.getElementById('status').style.display     = 'none';
+      document.getElementById('status').style.display = 'none';
     }
 
-    // ── ENVIO VIA GET (resolve CORS em ambientes corporativos) ─
     function confirmar() {
       document.getElementById('btn-confirmar').disabled = true;
       document.getElementById('btn-rescan').style.display = 'none';
       mostrarStatus('aguardando', '⏳ Registrando...');
 
       var agora = new Date();
-
-      // Monta a URL com os dados como query string (GET)
+      // Parâmetros simples sem espaço — compatíveis com o script v3
       var url = SHEET_URL
-        + '?ID+do+Pacote=' + encodeURIComponent(pacoteId)
-        + '&Motivo='       + encodeURIComponent(motivo)
-        + '&Destino='      + encodeURIComponent(destino)
-        + '&Unidade='      + encodeURIComponent(unidade)
-        + '&Data='         + encodeURIComponent(agora.toLocaleDateString('pt-BR'))
-        + '&Hora='         + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
+        + '?pacote='  + encodeURIComponent(pacoteId)
+        + '&motivo='  + encodeURIComponent(motivo)
+        + '&destino=' + encodeURIComponent(destino)
+        + '&unidade=' + encodeURIComponent(unidade)
+        + '&data='    + encodeURIComponent(agora.toLocaleDateString('pt-BR'))
+        + '&hora='    + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
 
-      // Usa uma imagem como trick para evitar CORS (funciona em qualquer ambiente)
+      // Trick de imagem: ignora CORS completamente
       var img = new Image();
       img.onload = img.onerror = function() {
         mostrarStatus('sucesso', '✅ Registrado com sucesso!');
@@ -257,25 +216,16 @@
       img.src = url;
     }
 
-    function rescan() {
-      resetarUI();
-      if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
-    }
-
-    function resetar() {
-      resetarUI();
-      if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
-    }
-
+    function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
+    function resetar() { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
     function resetarUI() {
       pacoteId = '';
-      document.getElementById('id-result').style.display    = 'none';
+      document.getElementById('id-result').style.display = 'none';
       document.getElementById('btn-confirmar').style.display = 'none';
-      document.getElementById('btn-confirmar').disabled     = false;
-      document.getElementById('btn-rescan').style.display   = 'none';
-      document.getElementById('status').style.display       = 'none';
+      document.getElementById('btn-confirmar').disabled = false;
+      document.getElementById('btn-rescan').style.display = 'none';
+      document.getElementById('status').style.display = 'none';
     }
-
     function mostrarStatus(tipo, msg) {
       var el = document.getElementById('status');
       el.className = 'status ' + tipo;
@@ -283,9 +233,7 @@
       el.style.display = 'block';
     }
 
-    window.onload = function() {
-      if (isMobile) trocarModo('camera'); else focarInput();
-    };
+    window.onload = function() { if (isMobile) trocarModo('camera'); else focarInput(); };
   </script>
 </body>
 </html>
