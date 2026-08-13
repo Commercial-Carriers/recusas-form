@@ -208,17 +208,13 @@
         + '&hora='    + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
 
       
-      // fetch no-cors: envia os dados e assume sucesso
-      fetch(url, { method: 'GET', mode: 'no-cors' })
-        .then(function() {
-          mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-          setTimeout(function() { resetar(); }, 2500);
-        })
-        .catch(function() {
-          mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
-          document.getElementById('btn-confirmar').disabled = false;
-          document.getElementById('btn-rescan').style.display = 'block';
-        });
+      // Abre a URL em uma aba oculta e fecha após 3s
+      var win = window.open(url, '_blank');
+      mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+      setTimeout(function() {
+        try { if (win) win.close(); } catch(e) {}
+        resetar();
+      }, 3000);
     }
 
     function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
