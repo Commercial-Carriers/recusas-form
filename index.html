@@ -104,14 +104,17 @@
   </div>
 
   <script>
-    var WEB3FORMS_KEY = '1710cc5a-7f51-4383-95e2-f980eb576d0b';
+    // ============================================================
+    //  ⬇️  COLE AQUI A URL DO SEU GOOGLE APPS SCRIPT
+    //  Exemplo: https://script.google.com/macros/s/AKfy.../exec
+    // ============================================================
+    var SHEET_URL = 'https://script.google.com/a/macros/mercadolivre.com/s/AKfycbxcIfz2uIJB88IegDTQot45C1I2oAmig4OLUTg2O-muoyVUqOuL35Jy8XWNnd-29vBS/exec';
 
     var params   = new URLSearchParams(window.location.search);
     var motivo   = params.get('motivo')  || 'Motivo não definido';
     var unidade  = params.get('unidade') || '';
     var destino  = params.get('destino') || '';
     var pacoteId = '';
-    // Detecta automaticamente: celular → câmera | desktop → leitor físico
     var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     var modoAtual = isMobile ? 'camera' : 'fisico';
     var scanner;
@@ -146,7 +149,6 @@
       }
     });
 
-    // Captura Enter enviado pelo leitor físico
     inputEl.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && inputEl.value.trim().length > 0) {
         e.preventDefault();
@@ -204,8 +206,7 @@
       }
     }
 
-    // ── MAPEAMENTO DE CÓDIGOS CURTOS → MOTIVO ─────────────────
-    // Formato do barcode: DESTINO-COD (ex: IMIHUB1-R01)
+    // ── MAPEAMENTO DE MOTIVOS ──────────────────────────────────
     var mapaMotivos = {
       'R01': 'Tipo de produto não aceito pela transportadora',
       'R03': 'Pacote avariado / danificado',
@@ -215,10 +216,8 @@
     };
 
     // ── CAPTURA INTELIGENTE ────────────────────────────────────
-    // Detecta se o scan é um código de motivo (ex: IMIHUB1-R01)
-    // ou um código de pacote (ex: 47626234490)
     function processarScan(texto) {
-      // Verifica se é um QR Code com URL completa
+      // QR Code com URL completa
       if (texto.indexOf('?motivo=') !== -1) {
         var tempParams = new URLSearchParams(texto.split('?')[1]);
         motivo  = decodeURIComponent(tempParams.get('motivo')  || motivo);
@@ -232,7 +231,7 @@
         return;
       }
 
-      // Verifica se é um código curto de motivo (ex: IMIHUB1-R01)
+      // Código curto de motivo (ex: IMIHUB1-R01)
       var partes = texto.split('-');
       var ultimaParte = partes[partes.length - 1];
       if (mapaMotivos[ultimaParte]) {
@@ -246,7 +245,7 @@
         return;
       }
 
-      // Caso contrário, é o ID do pacote
+      // ID do pacote
       capturarId(texto);
     }
 
@@ -259,37 +258,33 @@
       document.getElementById('status').style.display     = 'none';
     }
 
-    // ── ENVIO ──────────────────────────────────────────────────
+    // ── ENVIO PARA GOOGLE SHEETS ───────────────────────────────
     function confirmar() {
       document.getElementById('btn-confirmar').disabled = true;
       document.getElementById('btn-rescan').style.display = 'none';
       mostrarStatus('aguardando', '⏳ Registrando...');
 
       var agora = new Date();
-      fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          access_key: WEB3FORMS_KEY,
-          subject: 'Recusa: ' + motivo,
-          'ID do Pacote': pacoteId,
-          'Motivo': motivo,
-          'Destino': destino,
-          'Unidade': unidade,
-          'Data': agora.toLocaleDateString('pt-BR'),
-          'Hora': agora.toLocaleTimeString('pt-BR')
-        })
+      var payload = {
+        'ID do Pacote': pacoteId,
+        'Motivo':       motivo,
+        'Destino':      destino,
+        'Unidade':      unidade,
+        'Data':         agora.toLocaleDateString('pt-BR'),
+        'Hora':         agora.toLocaleTimeString('pt-BR')
+      };
+
+      fetch(SHEET_URL, {
+        method:  'POST',
+        // Google Apps Script requer mode no-cors para evitar erro de CORS
+        mode:    'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
       })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.success) {
-          mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-          setTimeout(function() { resetar(); }, 2500);
-        } else {
-          mostrarStatus('erro', '❌ Erro. Tente novamente.');
-          document.getElementById('btn-confirmar').disabled = false;
-          document.getElementById('btn-rescan').style.display = 'block';
-        }
+      .then(function() {
+        // no-cors não retorna corpo — se chegou aqui, foi enviado com sucesso
+        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+        setTimeout(function() { resetar(); }, 2500);
       })
       .catch(function() {
         mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
