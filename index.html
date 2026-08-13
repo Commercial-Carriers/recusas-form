@@ -207,13 +207,22 @@
         + '&data='    + encodeURIComponent(agora.toLocaleDateString('pt-BR'))
         + '&hora='    + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
 
-      // Trick de imagem: ignora CORS completamente
-      var img = new Image();
-      img.onload = img.onerror = function() {
+      
+      // iframe oculto — contorna CORS em redes corporativas
+      var iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      iframe.onload = function() {
         mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-        setTimeout(function() { resetar(); }, 2500);
+        setTimeout(function() { document.body.removeChild(iframe); resetar(); }, 2500);
       };
-      img.src = url;
+      iframe.onerror = function() {
+        mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
+        document.getElementById('btn-confirmar').disabled = false;
+        document.getElementById('btn-rescan').style.display = 'block';
+        document.body.removeChild(iframe);
+      };
+      document.body.appendChild(iframe);
     }
 
     function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
