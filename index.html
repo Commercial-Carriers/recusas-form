@@ -208,35 +208,17 @@
         + '&hora='    + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
 
       
-      // JSONP — funciona em qualquer ambiente sem bloqueio de CORS
-      var callbackName = 'cb_' + Date.now();
-      var script = document.createElement('script');
-      var timeout = setTimeout(function() {
-        // Se demorar mais de 10s, assume sucesso (Apps Script pode ser lento)
-        if (window[callbackName]) delete window[callbackName];
-        if (script.parentNode) document.body.removeChild(script);
-        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-        setTimeout(function() { resetar(); }, 2500);
-      }, 10000);
-
-      window[callbackName] = function(resp) {
-        clearTimeout(timeout);
-        delete window[callbackName];
-        if (script.parentNode) document.body.removeChild(script);
-        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-        setTimeout(function() { resetar(); }, 2500);
-      };
-
-      script.src = url + '&callback=' + callbackName;
-      script.onerror = function() {
-        clearTimeout(timeout);
-        delete window[callbackName];
-        if (script.parentNode) document.body.removeChild(script);
-        mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
-        document.getElementById('btn-confirmar').disabled = false;
-        document.getElementById('btn-rescan').style.display = 'block';
-      };
-      document.body.appendChild(script);
+      // fetch no-cors: envia os dados e assume sucesso
+      fetch(url, { method: 'GET', mode: 'no-cors' })
+        .then(function() {
+          mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+          setTimeout(function() { resetar(); }, 2500);
+        })
+        .catch(function() {
+          mostrarStatus('erro', '❌ Sem conexão. Tente novamente.');
+          document.getElementById('btn-confirmar').disabled = false;
+          document.getElementById('btn-rescan').style.display = 'block';
+        });
     }
 
     function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
