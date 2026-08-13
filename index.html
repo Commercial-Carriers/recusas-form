@@ -192,72 +192,48 @@
       document.getElementById('status').style.display = 'none';
     }
 
+    // Registro local para detectar duplicatas sem depender do servidor
+    var registrosLocais = {};
+
     function confirmar() {
+      // Verifica duplicata localmente primeiro
+      if (registrosLocais[pacoteId]) {
+        var reg = registrosLocais[pacoteId];
+        var msg = '\u26a0\ufe0f Este pacote j\u00e1 foi registrado \u00e0s ' + reg.hora + ' como "' + reg.motivo + '".\n\nDeseja registrar novamente?';
+        if (!confirm(msg)) {
+          resetar();
+          return;
+        }
+      }
+
       document.getElementById('btn-confirmar').disabled = true;
       document.getElementById('btn-rescan').style.display = 'none';
-      mostrarStatus('aguardando', '⏳ Registrando...');
+      mostrarStatus('aguardando', '\u23f3 Registrando...');
 
       var agora = new Date();
-      // Parâmetros simples sem espaço — compatíveis com o script v3
+      var horaStr = agora.toLocaleTimeString('pt-BR');
+      var dataStr = agora.toLocaleDateString('pt-BR');
+
       var url = SHEET_URL
         + '?pacote='  + encodeURIComponent(pacoteId)
         + '&motivo='  + encodeURIComponent(motivo)
         + '&destino=' + encodeURIComponent(destino)
         + '&unidade=' + encodeURIComponent(unidade)
-        + '&data='    + encodeURIComponent(agora.toLocaleDateString('pt-BR'))
-        + '&hora='    + encodeURIComponent(agora.toLocaleTimeString('pt-BR'));
+        + '&data='    + encodeURIComponent(dataStr)
+        + '&hora='    + encodeURIComponent(horaStr);
 
-      
-      // JSONP com callback — recebe resposta do script
-      var cbName = 'cb_' + Date.now();
-      var script = document.createElement('script');
+      // Salva localmente para detectar duplicatas na mesma sessao
+      registrosLocais[pacoteId] = { hora: horaStr, motivo: motivo };
 
-      var timer = setTimeout(function() {
-        // Timeout de 12s: assume sucesso (script pode ser lento)
-        limpaCb(cbName, script);
-        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-        setTimeout(resetar, 2500);
-      }, 12000);
-
-      window[cbName] = function(resp) {
-        clearTimeout(timer);
-        limpaCb(cbName, script);
-
-        if (resp && resp.duplicata) {
-          // Mostra alerta de duplicidade
-          var info = resp.info || {};
-          var msg = '⚠️ Este pacote já foi registrado em ' + (info.data || '') + ' às ' + (info.hora || '') + ' como "' + (info.motivo || '') + '".
-
-Deseja registrar novamente?';
-          if (confirm(msg)) {
-            // Força novo registro ignorando duplicata
-            var urlForce = url + '&force=1';
-            var s2 = document.createElement('script');
-            var cb2 = 'cb_force_' + Date.now();
-            window[cb2] = function() { limpaCb(cb2, s2); mostrarStatus('sucesso', '✅ Registrado com sucesso!'); setTimeout(resetar, 2500); };
-            s2.src = urlForce.replace('callback=' + cbName, 'callback=' + cb2);
-            s2.onerror = function() { limpaCb(cb2, s2); mostrarStatus('sucesso', '✅ Registrado com sucesso!'); setTimeout(resetar, 2500); };
-            document.body.appendChild(s2);
-          } else {
-            // Operador cancelou — volta para escanear
-            resetar();
-          }
-        } else {
-          mostrarStatus('sucesso', '✅ Registrado com sucesso!');
-          setTimeout(resetar, 2500);
-        }
-      };
-
-      script.onerror = function() {
-        clearTimeout(timer);
-        limpaCb(cbName, script);
-        // Mesmo com erro de CORS, o script pode ter gravado — assume sucesso
-        mostrarStatus('sucesso', '✅ Registrado com sucesso!');
+      // Envia via script tag — funciona em qualquer ambiente
+      var tag = document.createElement('script');
+      tag.src = url;
+      tag.onload = tag.onerror = function() {
+        if (tag.parentNode) tag.parentNode.removeChild(tag);
+        mostrarStatus('sucesso', '\u2705 Registrado com sucesso!');
         setTimeout(resetar, 2500);
       };
-
-      script.src = url + '&callback=' + cbName;
-      document.body.appendChild(script);
+      document.body.appendChild(tag);
     }
 
     function limpaCb(nome, el) {
