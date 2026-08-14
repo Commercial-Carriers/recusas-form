@@ -227,25 +227,14 @@
       // Salva localmente para detectar duplicatas na mesma sessao
       registrosLocais[pacoteId] = { hora: horaStr, motivo: motivo };
 
-      // Envia via iframe oculto — Google Forms aceita de qualquer origem, sem login
-      var iframe = document.createElement('iframe');
-      iframe.name = 'form_target_' + Date.now();
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-
-      var form = document.createElement('form');
-      form.action = url;
-      form.method = 'GET';
-      form.target = iframe.name;
-      document.body.appendChild(form);
-      form.submit();
+      // Envia via imagem oculta — técnica mais compatível entre navegadores
+      var img = new Image();
+      img.src = url;
 
       setTimeout(function() {
         mostrarStatus('sucesso', '\u2705 Registrado com sucesso!');
-        if (form.parentNode) form.parentNode.removeChild(form);
-        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
         setTimeout(resetar, 2500);
-      }, 1000);
+      }, 1200);
     }
 
         function limpaCb(nome, el) {
