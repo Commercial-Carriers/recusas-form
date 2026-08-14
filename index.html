@@ -91,7 +91,7 @@
 
   <script>
     // ⬇️ Cole aqui a URL gerada após nova implantação do script v3
-    var SHEET_URL = 'https://script.google.com/macros/s/AKfycbwX06oQlsgwDgzS4oH_04gSuFc4GOyTCpEAjfOuSOSZj6UjOKBLN0i3yqCyeK6TqbQV/exec';
+    var FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdJJlNPKWGmogUo8FJ9I2hwHE-TsVASqx2rFMP0oiA4n1sYcQ/formResponse';
 
     var params   = new URLSearchParams(window.location.search);
     var motivo   = params.get('motivo')  || 'Motivo não definido';
@@ -214,34 +214,41 @@
       var horaStr = agora.toLocaleTimeString('pt-BR');
       var dataStr = agora.toLocaleDateString('pt-BR');
 
-      var url = SHEET_URL
-        + '?pacote='  + encodeURIComponent(pacoteId)
-        + '&motivo='  + encodeURIComponent(motivo)
-        + '&destino=' + encodeURIComponent(destino)
-        + '&unidade=' + encodeURIComponent(unidade)
-        + '&data='    + encodeURIComponent(dataStr)
-        + '&hora='    + encodeURIComponent(horaStr);
+      // IDs dos campos do Google Forms
+      var url = FORM_URL
+        + '?entry.1571965359=' + encodeURIComponent(motivo)
+        + '&entry.562260569='  + encodeURIComponent(destino)
+        + '&entry.4164419='    + encodeURIComponent(unidade)
+        + '&entry.1790638686=' + encodeURIComponent(dataStr)
+        + '&entry.563535349='  + encodeURIComponent(horaStr)
+        + '&entry.1084667214=' + encodeURIComponent(pacoteId)
+        + '&submit=Submit';
 
       // Salva localmente para detectar duplicatas na mesma sessao
       registrosLocais[pacoteId] = { hora: horaStr, motivo: motivo };
 
-      // Envia via script tag e mostra sucesso imediatamente
-      // (CORS bloqueia a resposta mas o servidor recebe e grava normalmente)
-      var tag = document.createElement('script');
-      tag.src = url;
-      setTimeout(function() {
-        if (tag.parentNode) tag.parentNode.removeChild(tag);
-      }, 5000);
-      document.body.appendChild(tag);
+      // Envia via iframe oculto — Google Forms aceita de qualquer origem, sem login
+      var iframe = document.createElement('iframe');
+      iframe.name = 'form_target_' + Date.now();
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
 
-      // Mostra sucesso imediatamente sem esperar resposta
+      var form = document.createElement('form');
+      form.action = url;
+      form.method = 'GET';
+      form.target = iframe.name;
+      document.body.appendChild(form);
+      form.submit();
+
       setTimeout(function() {
         mostrarStatus('sucesso', '\u2705 Registrado com sucesso!');
+        if (form.parentNode) form.parentNode.removeChild(form);
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
         setTimeout(resetar, 2500);
-      }, 800);
+      }, 1000);
     }
 
-    function limpaCb(nome, el) {
+        function limpaCb(nome, el) {
       if (window[nome]) delete window[nome];
       if (el && el.parentNode) el.parentNode.removeChild(el);
     }
