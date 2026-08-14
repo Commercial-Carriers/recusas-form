@@ -89,6 +89,17 @@
     <div class="status" id="status"></div>
   </div>
 
+  <!-- Envio para Google Forms via form estático + iframe oculto -->
+  <iframe name="hidden_target" style="display:none;"></iframe>
+  <form id="form-envio" action="https://docs.google.com/forms/d/e/1FAIpQLSdJJlNPKWGmogUo8FJ9I2hwHE-TsVASqx2rFMP0oiA4n1sYcQ/formResponse" method="POST" target="hidden_target" style="display:none;">
+    <input type="text" name="entry.1571965359" id="f-motivo">
+    <input type="text" name="entry.562260569"  id="f-destino">
+    <input type="text" name="entry.4164419"    id="f-unidade">
+    <input type="text" name="entry.1790638686" id="f-data">
+    <input type="text" name="entry.563535349"  id="f-hora">
+    <input type="text" name="entry.1084667214" id="f-pacote">
+  </form>
+
   <script>
     // ⬇️ Cole aqui a URL gerada após nova implantação do script v3
     var FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdJJlNPKWGmogUo8FJ9I2hwHE-TsVASqx2rFMP0oiA4n1sYcQ/formResponse';
@@ -227,9 +238,14 @@
       // Salva localmente para detectar duplicatas na mesma sessao
       registrosLocais[pacoteId] = { hora: horaStr, motivo: motivo };
 
-      // Envia via imagem oculta — técnica mais compatível entre navegadores
-      var img = new Image();
-      img.src = url;
+      // Preenche o formulário estático e envia via iframe oculto
+      document.getElementById('f-motivo').value  = motivo;
+      document.getElementById('f-destino').value = destino;
+      document.getElementById('f-unidade').value = unidade;
+      document.getElementById('f-data').value    = dataStr;
+      document.getElementById('f-hora').value    = horaStr;
+      document.getElementById('f-pacote').value  = pacoteId;
+      document.getElementById('form-envio').submit();
 
       setTimeout(function() {
         mostrarStatus('sucesso', '\u2705 Registrado com sucesso!');
