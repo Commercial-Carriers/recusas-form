@@ -276,6 +276,24 @@
     }
 
     window.onload = function() { if (isMobile) trocarModo('camera'); else focarInput(); };
+
+    // ── ATALHOS DE TECLADO: Enter confirma, Esc cancela ────────
+    // So agem quando o botao Confirmar esta visivel na tela
+    // (nao interfere na leitura do leitor fisico, que usa o campo oculto)
+    document.addEventListener('keydown', function(e) {
+      var btnConfirmar = document.getElementById('btn-confirmar');
+      var confirmarVisivel = btnConfirmar.style.display === 'block' && !btnConfirmar.disabled;
+
+      if (!confirmarVisivel) return;
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmar();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        rescan();
+      }
+    });
   </script>
 </body>
 </html>
