@@ -101,7 +101,6 @@
   </form>
 
   <script>
-    // ⬇️ Cole aqui a URL gerada após nova implantação do script v3
     var FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdJJlNPKWGmogUo8FJ9I2hwHE-TsVASqx2rFMP0oiA4n1sYcQ/formResponse';
 
     var params   = new URLSearchParams(window.location.search);
@@ -150,7 +149,8 @@
         document.getElementById('scanner-camera').classList.remove('visivel');
         document.getElementById('btn-modo-fisico').classList.add('ativo');
         document.getElementById('btn-modo-camera').classList.remove('ativo');
-        pararCamera(); focarInput();
+        pararCamera();
+        focarInput();
       } else {
         document.getElementById('scanner-camera').classList.add('visivel');
         document.getElementById('scanner-fisico').classList.remove('visivel');
@@ -168,29 +168,55 @@
       'R06': 'Vazamento líquido'
     };
 
+    // Transportadoras com uma unica unidade fixa de operacao.
+    // Usado apenas como fallback quando o codigo de barras bipado
+    // (formato DESTINO-CODIGO) nao traz a unidade.
+    var unidadeFixaPorDestino = {
+      'IMILE': 'BRXSP24'
+    };
+
     function processarScan(texto) {
+      // QR Code com URL completa (continua igual, ja traz tudo)
       if (texto.indexOf('?motivo=') !== -1) {
         var tp = new URLSearchParams(texto.split('?')[1]);
         motivo  = decodeURIComponent(tp.get('motivo')  || motivo);
         destino = decodeURIComponent(tp.get('destino') || destino);
-        unidade = decodeURIComponent(tp.get('unidade') || unidade);
+        var unidadeQr = decodeURIComponent(tp.get('unidade') || '');
+        if (unidadeQr) {
+          unidade = unidadeQr;
+        }
         document.getElementById('motivo-display').textContent = motivo;
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
+        if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
+
+      // Código de barras curto: DESTINO-CODIGO (formato atual das etiquetas)
+      // ou DESTINO-UNIDADE-CODIGO (formato novo, se algum dia usado)
       var partes = texto.split('-');
       var ultima = partes[partes.length - 1];
       if (mapaMotivos[ultima]) {
-        destino = partes.slice(0, partes.length - 1).join('-');
-        motivo  = mapaMotivos[ultima];
+        if (partes.length >= 3) {
+          unidade = partes[partes.length - 2];
+          destino = partes.slice(0, partes.length - 2).join('-');
+        } else {
+          destino = partes.slice(0, partes.length - 1).join('-');
+          // Fallback: transportadoras com unidade unica fixa (ex: IMILE)
+          if (unidadeFixaPorDestino[destino]) {
+            unidade = unidadeFixaPorDestino[destino];
+          }
+        }
+        motivo = mapaMotivos[ultima];
         document.getElementById('motivo-display').textContent = motivo;
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
+        if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
+
       capturarId(texto);
     }
 
@@ -203,11 +229,9 @@
       document.getElementById('status').style.display = 'none';
     }
 
-    // Registro local para detectar duplicatas sem depender do servidor
     var registrosLocais = {};
 
     function confirmar() {
-      // Verifica duplicata localmente primeiro
       if (registrosLocais[pacoteId]) {
         var reg = registrosLocais[pacoteId];
         var msg = '\u26a0\ufe0f Este pacote j\u00e1 foi registrado \u00e0s ' + reg.hora + ' como "' + reg.motivo + '".\n\nDeseja registrar novamente?';
@@ -225,20 +249,8 @@
       var horaStr = agora.toLocaleTimeString('pt-BR');
       var dataStr = agora.toLocaleDateString('pt-BR');
 
-      // IDs dos campos do Google Forms
-      var url = FORM_URL
-        + '?entry.1571965359=' + encodeURIComponent(motivo)
-        + '&entry.562260569='  + encodeURIComponent(destino)
-        + '&entry.4164419='    + encodeURIComponent(unidade)
-        + '&entry.1790638686=' + encodeURIComponent(dataStr)
-        + '&entry.563535349='  + encodeURIComponent(horaStr)
-        + '&entry.1084667214=' + encodeURIComponent(pacoteId)
-        + '&submit=Submit';
-
-      // Salva localmente para detectar duplicatas na mesma sessao
       registrosLocais[pacoteId] = { hora: horaStr, motivo: motivo };
 
-      // Preenche o formulário estático e envia via iframe oculto
       document.getElementById('f-motivo').value  = motivo;
       document.getElementById('f-destino').value = destino;
       document.getElementById('f-unidade').value = unidade;
@@ -251,11 +263,6 @@
         mostrarStatus('sucesso', '\u2705 Registrado com sucesso!');
         setTimeout(resetar, 2500);
       }, 1200);
-    }
-
-        function limpaCb(nome, el) {
-      if (window[nome]) delete window[nome];
-      if (el && el.parentNode) el.parentNode.removeChild(el);
     }
 
     function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
@@ -277,13 +284,9 @@
 
     window.onload = function() { if (isMobile) trocarModo('camera'); else focarInput(); };
 
-    // ── ATALHOS DE TECLADO: Enter confirma, Esc cancela ────────
-    // So agem quando o botao Confirmar esta visivel na tela
-    // (nao interfere na leitura do leitor fisico, que usa o campo oculto)
     document.addEventListener('keydown', function(e) {
       var btnConfirmar = document.getElementById('btn-confirmar');
       var confirmarVisivel = btnConfirmar.style.display === 'block' && !btnConfirmar.disabled;
-
       if (!confirmarVisivel) return;
 
       if (e.key === 'Enter') {
