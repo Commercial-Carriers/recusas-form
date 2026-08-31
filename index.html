@@ -221,6 +221,14 @@
     }
 
     function capturarId(id) {
+      // Validação: o ID Meli deve ter exatamente 11 caracteres numéricos (geralmente começa com 47...)
+      var apenasNumeros = /^[0-9]{11}$/.test(id);
+      if (!apenasNumeros) {
+        mostrarStatus('erro', '\u274c ID Meli incorreto. Por favor, bipe o c\u00f3digo de barras Meli (11 d\u00edgitos, geralmente iniciando com 47...).');
+        if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
+        return;
+      }
+
       pacoteId = id;
       document.getElementById('id-value').textContent = id;
       document.getElementById('id-result').style.display = 'block';
