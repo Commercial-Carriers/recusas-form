@@ -39,6 +39,13 @@
     .status.sucesso   { background: #e8f5e9; color: #2e7d32; }
     .status.erro      { background: #ffebee; color: #c62828; }
     .status.aguardando { background: #fff8e1; color: #795548; }
+
+    .link-manual { text-align: center; font-size: 13px; color: #1565c0; margin-top: 12px; cursor: pointer; text-decoration: underline; }
+    .manual-box { display: none; margin-top: 12px; }
+    .manual-box.visivel { display: block; }
+    .manual-box input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 8px; text-align: center; letter-spacing: 1px; }
+    .manual-box input:focus { outline: none; border-color: #1565c0; }
+    .manual-box button { width: 100%; padding: 12px; background: #1565c0; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -69,6 +76,15 @@
     <div class="scanner-camera" id="scanner-camera">
       <p class="scan-label">📷 Aponte a câmera para o código de barras do pacote</p>
       <div id="reader"></div>
+    </div>
+
+    <div class="link-manual" id="link-manual" onclick="abrirManual()" style="display:none;">
+      ⌨️ Etiqueta apagada? Digitar o ID manualmente
+    </div>
+
+    <div class="manual-box" id="manual-box">
+      <input type="text" id="input-manual" inputmode="numeric" pattern="[0-9]*" maxlength="11" placeholder="Digite os 11 números do ID Meli">
+      <button onclick="confirmarManual()">Usar este ID</button>
     </div>
 
     <input type="text" id="input-scanner" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -108,6 +124,7 @@
     var unidade  = params.get('unidade') || '';
     var destino  = params.get('destino') || '';
     var pacoteId = '';
+    var motivoDefinido = !!params.get('motivo');
     var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     var modoAtual = isMobile ? 'camera' : 'fisico';
     var scanner;
@@ -116,6 +133,7 @@
     document.getElementById('motivo-display').textContent = motivo;
     if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
     if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
+    if (params.get('motivo')) { document.getElementById('link-manual').style.display = 'block'; }
 
     function focarInput() {
       inputEl.value = '';
@@ -189,6 +207,8 @@
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
         if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
+        motivoDefinido = true;
+        document.getElementById('link-manual').style.display = 'block';
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
@@ -213,6 +233,8 @@
         if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
         if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
         mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
+        motivoDefinido = true;
+        document.getElementById('link-manual').style.display = 'block';
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
@@ -235,7 +257,32 @@
       document.getElementById('btn-confirmar').style.display = 'block';
       document.getElementById('btn-rescan').style.display = 'block';
       document.getElementById('status').style.display = 'none';
+      document.getElementById('link-manual').style.display = 'none';
+      document.getElementById('manual-box').classList.remove('visivel');
     }
+
+    // ── DIGITAÇÃO MANUAL DO ID (etiqueta apagada / ilegível) ───
+    function abrirManual() {
+      document.getElementById('manual-box').classList.add('visivel');
+      document.getElementById('input-manual').value = '';
+      document.getElementById('input-manual').focus();
+    }
+
+    function confirmarManual() {
+      var valor = document.getElementById('input-manual').value.trim();
+      if (!valor) {
+        mostrarStatus('erro', '\u274c Digite o ID antes de confirmar.');
+        return;
+      }
+      capturarId(valor);
+    }
+
+    document.getElementById('input-manual').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmarManual();
+      }
+    });
 
     var registrosLocais = {};
 
@@ -282,6 +329,8 @@
       document.getElementById('btn-confirmar').disabled = false;
       document.getElementById('btn-rescan').style.display = 'none';
       document.getElementById('status').style.display = 'none';
+      document.getElementById('link-manual').style.display = motivoDefinido ? 'block' : 'none';
+      document.getElementById('manual-box').classList.remove('visivel');
     }
     function mostrarStatus(tipo, msg) {
       var el = document.getElementById('status');
