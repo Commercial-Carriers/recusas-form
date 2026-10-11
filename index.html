@@ -58,6 +58,49 @@
     .popup-alerta.visivel { transform: translateX(-50%) translateY(0); }
     .popup-alerta.sucesso { background: #2e7d32; }
     .popup-alerta.aviso { background: #795548; }
+
+    /* Faixa com transportadora e origem do turno */
+    .turno-badge { display: none; align-items: center; justify-content: space-between; gap: 8px; background: #111; color: #FFE600; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+    .turno-badge button { background: #FFE600; color: #111; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+
+    /* Tela de escolha de transportadora e origem */
+    .modal-turno { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 3000; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 16px; }
+    .modal-turno.visivel { display: flex; }
+    .modal-box { background: white; border-radius: 14px; padding: 20px 18px; width: 100%; max-width: 760px; margin: auto; }
+    .modal-box h2 { font-size: 17px; color: #222; margin-bottom: 4px; }
+    .modal-box .sub { font-size: 12px; color: #777; margin-bottom: 14px; }
+    .grupo-titulo { font-size: 12px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 8px; }
+    .opcoes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px; }
+    .opcao { padding: 12px 8px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 14px; font-weight: 700; color: #444; cursor: pointer; }
+    .opcao.sel { border-color: #00a650; background: #e8f5e9; color: #1b5e20; }
+    .btn-turno-ok { position: sticky; bottom: 0; width: 100%; padding: 14px; background: #00a650; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 14px; box-shadow: 0 -6px 12px rgba(255,255,255,0.95); }
+    .btn-turno-ok:disabled { background: #aaa; cursor: not-allowed; }
+    .link-cancelar-turno { display: none; text-align: right; font-size: 13px; color: #1565c0; margin-bottom: 8px; cursor: pointer; text-decoration: underline; }
+    .opcao strong { display: block; font-size: 14px; }
+    .opcao small { display: block; font-size: 11px; font-weight: 600; color: #777; margin-top: 2px; line-height: 1.2; }
+    .opcao.sel small { color: #2e7d32; }
+
+    /* Aviso fixo enquanto nao ha motivo + botao para trocar o motivo */
+    .aviso-motivo { display: block; background: #fff3e0; border: 2px solid #ff9800; color: #e65100; border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 10px; line-height: 1.3; }
+    /* Botao colado no motivo selecionado: sempre visivel, impossivel nao ver */
+    .btn-trocar { display: none; width: 100%; padding: 13px 12px; background: #111; color: #FFE600; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; line-height: 1.35; text-align: center; cursor: pointer; margin-bottom: 10px; }
+    .btn-trocar u { color: white; }
+    .versao { text-align: center; font-size: 10px; color: #aaa; margin: 2px 0 16px; }
+    .dica-turno { display: none; text-align: center; font-size: 11px; color: #888; margin: -4px 0 10px; }
+    .btn-trocar:active { background: #333; }
+
+    /* Opcoes de motivo na tela de escolha */
+    /* Listas em colunas: celular 2 colunas; telas maiores (notebook/tablet) 3 e 4 colunas */
+    .opcao.motivo { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 12px 8px; min-height: 92px; }
+    .opcao.motivo strong { font-size: 12.5px; line-height: 1.25; }
+    .opc-icone { font-size: 24px; line-height: 1; }
+    @media (min-width: 560px) {
+      #opcoes-transp, #opcoes-origem, #opcoes-motivo { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (min-width: 760px) {
+      #opcoes-origem { grid-template-columns: repeat(4, 1fr); }
+    }
+    .opcional { font-weight: 600; text-transform: none; letter-spacing: 0; color: #888; font-size: 11px; }
   </style>
 </head>
 <body>
@@ -68,9 +111,13 @@
   </div>
 
   <div class="card">
+    <div class="turno-badge" id="turno-badge">
+      <span id="turno-texto"></span>
+    </div>
+    <div class="dica-turno" id="dica-turno">Para trocar a transportadora ou a origem, atualize a página.</div>
     <div class="motivo-badge" id="motivo-display">Carregando...</div>
-    <div class="unidade-badge" id="destino-display" style="display:none"></div>
-    <div class="unidade-badge" id="unidade-display" style="display:none"></div>
+    <button type="button" class="btn-trocar" id="btn-trocar" onclick="abrirMotivo()">🔄 Para escolher outro motivo da recusa, <u>clique aqui</u></button>
+    <div class="aviso-motivo" id="aviso-motivo">⚠️ Só é possível concluir o registro quando um motivo estiver selecionado.</div>
 
     <div class="modo-toggle">
       <button class="btn-modo ativo" id="btn-modo-fisico" onclick="trocarModo('fisico')">🔫 Leitor físico</button>
@@ -117,6 +164,30 @@
     <div class="status" id="status"></div>
   </div>
 
+  <!-- Tela de escolha: transportadora, origem e motivo (depois, so o motivo pode ser trocado) -->
+  <div class="modal-turno" id="modal-turno">
+    <div class="modal-box">
+      <div class="link-cancelar-turno" id="cancelar-turno" onclick="fecharTurno()">✕ Cancelar</div>
+      <h2 id="titulo-turno">🚚 Dados do turno</h2>
+      <p class="sub" id="sub-turno"></p>
+
+      <div id="grupos-turno">
+        <div class="grupo-titulo">Transportadora</div>
+        <div class="opcoes" id="opcoes-transp"></div>
+
+        <div class="grupo-titulo">Origem</div>
+        <div class="opcoes" id="opcoes-origem"></div>
+      </div>
+
+      <div class="grupo-titulo">Motivo da recusa</div>
+      <div class="opcoes" id="opcoes-motivo"></div>
+
+      <button type="button" class="btn-turno-ok" id="btn-turno-ok" onclick="confirmarTurno()" disabled>Começar</button>
+    </div>
+  </div>
+
+  <div class="versao" id="versao">Versão 11/10-B · bloqueia pacote repetido</div>
+
   <!-- Pop-up de alerta no topo da tela, bem visível -->
   <div class="popup-alerta" id="popup-alerta"></div>
 
@@ -134,21 +205,16 @@
   <script>
     var FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdJJlNPKWGmogUo8FJ9I2hwHE-TsVASqx2rFMP0oiA4n1sYcQ/formResponse';
 
-    var params   = new URLSearchParams(window.location.search);
-    var motivo   = params.get('motivo')  || 'Motivo não definido';
-    var unidade  = params.get('unidade') || '';
-    var destino  = params.get('destino') || '';
+    // Tudo comeca zerado ao abrir ou atualizar a pagina (celular ou F5). Nada fica salvo no aparelho.
+    var motivo   = 'Motivo não definido';
     var pacoteId = '';
-    var motivoDefinido = !!params.get('motivo');
+    var motivoDefinido = false;
     var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     var modoAtual = isMobile ? 'camera' : 'fisico';
     var scanner;
     var inputEl = document.getElementById('input-scanner');
 
     document.getElementById('motivo-display').textContent = motivo;
-    if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
-    if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
-    if (params.get('motivo')) { document.getElementById('link-manual').style.display = 'block'; }
 
     function focarInput() {
       inputEl.value = '';
@@ -160,12 +226,14 @@
     inputEl.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && inputEl.value.trim().length > 0) {
         e.preventDefault();
+        e.stopPropagation();
         processarScan(inputEl.value.trim());
         inputEl.value = '';
       }
     });
 
     var tentativasCamera = 0;
+    var cameraAtiva = false;
 
     function iniciarCamera() {
       // Se a biblioteca ainda não carregou (CDN lento/instável), tenta novamente por até 5 segundos
@@ -180,18 +248,21 @@
         return;
       }
       tentativasCamera = 0;
+      if (cameraAtiva) return;
+      cameraAtiva = true;
 
       scanner = new Html5Qrcode('reader');
       scanner.start({ facingMode: 'environment' }, {
         fps: 10,
         qrbox: { width: Math.min(window.innerWidth - 60, 320), height: 100 },
         formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_93, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.ITF, Html5QrcodeSupportedFormats.QR_CODE]
-      }, function(txt) { scanner.stop().then(function() { processarScan(txt); }); }, function() {})
+      }, function(txt) { scanner.stop().then(function() { cameraAtiva = false; processarScan(txt); }, function() { cameraAtiva = false; }); }, function() {})
       .catch(function() {
+        cameraAtiva = false;
         mostrarStatus('erro', '\u274c N\u00e3o foi poss\u00edvel acessar a c\u00e2mera. Verifique as permiss\u00f5es do navegador.');
       });
     }
-    function pararCamera() { if (scanner) { scanner.stop().catch(function(){}); scanner = null; } }
+    function pararCamera() { cameraAtiva = false; if (scanner) { scanner.stop().catch(function(){}); scanner = null; } }
 
     function trocarModo(modo) {
       modoAtual = modo; resetarUI();
@@ -216,71 +287,49 @@
       'R03': 'Pacote avariado / danificado',
       'R04': 'Embalagem inadequada',
       'R05': 'Divergência de dados (etiqueta x sistema)',
-      'R06': 'Vazamento líquido'
-    };
-
-    // Transportadoras com uma unica unidade fixa de operacao.
-    // Usado apenas como fallback quando o codigo de barras bipado
-    // (formato DESTINO-CODIGO) nao traz a unidade.
-    var unidadeFixaPorDestino = {
-      'IMILE': 'BRXSP24'
+      'R06': 'Vazamento líquido',
+      'R07': 'Peso acima do limite',
+      'R08': 'Dimensão fora do aceitável'
     };
 
     function processarScan(texto) {
-      // QR Code com URL completa (continua igual, ja traz tudo)
-      if (texto.indexOf('?motivo=') !== -1) {
-        var tp = new URLSearchParams(texto.split('?')[1]);
-        motivo  = decodeURIComponent(tp.get('motivo')  || motivo);
-        destino = decodeURIComponent(tp.get('destino') || destino);
-        var unidadeQr = decodeURIComponent(tp.get('unidade') || '');
-        if (unidadeQr) {
-          unidade = unidadeQr;
-        }
-        document.getElementById('motivo-display').textContent = motivo;
-        if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
-        if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
-        mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
-        motivoDefinido = true;
-        document.getElementById('link-manual').style.display = 'block';
-        if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
-        return;
-      }
+      if (turnoAberto) return;
 
-      // Código de barras curto: DESTINO-CODIGO (formato atual das etiquetas)
-      // ou DESTINO-UNIDADE-CODIGO (formato novo, se algum dia usado)
+      // O motivo nao e mais bipado: e escolhido na tela. Etiquetas de motivo recebem uma orientacao.
       var partes = texto.split('-');
       var ultima = partes[partes.length - 1];
-      if (mapaMotivos[ultima]) {
-        if (partes.length >= 3) {
-          unidade = partes[partes.length - 2];
-          destino = partes.slice(0, partes.length - 2).join('-');
-        } else {
-          destino = partes.slice(0, partes.length - 1).join('-');
-          // Fallback: transportadoras com unidade unica fixa (ex: IMILE)
-          if (unidadeFixaPorDestino[destino]) {
-            unidade = unidadeFixaPorDestino[destino];
-          }
-        }
-        motivo = mapaMotivos[ultima];
-        document.getElementById('motivo-display').textContent = motivo;
-        if (destino) { document.getElementById('destino-display').textContent = '🏭 Destino: ' + destino; document.getElementById('destino-display').style.display = 'block'; }
-        if (unidade) { document.getElementById('unidade-display').textContent = '📍 ' + unidade; document.getElementById('unidade-display').style.display = 'block'; }
-        mostrarStatus('aguardando', '✅ Motivo definido! Agora bipe o código de barras do pacote.');
-        motivoDefinido = true;
-        document.getElementById('link-manual').style.display = 'block';
+      var etiquetaDeMotivo = texto.indexOf('?motivo=') !== -1 || Object.prototype.hasOwnProperty.call(mapaMotivos, ultima);
+      if (etiquetaDeMotivo) {
+        mostrarStatus('erro', '⚠️ O motivo não é mais bipado. Para escolher outro motivo, clique em "clique aqui" logo abaixo do motivo. Agora bipe apenas o código de barras do pacote.');
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
         return;
       }
 
-      capturarId(texto);
+      capturarId(texto, true);
     }
 
-    function capturarId(id) {
+    // automatico = true: leitura por bipe/camera (registra sozinho apos validar)
+    // automatico = false: digitacao manual (mostra o ID e pede para confirmar)
+    function capturarId(id, automatico) {
       // Validação: o ID Meli deve ter exatamente 11 caracteres numéricos (geralmente começa com 47...)
       var apenasNumeros = /^[0-9]{11}$/.test(id);
       if (!apenasNumeros) {
         mostrarStatus('erro', '\u274c ID Meli incorreto. Por favor, bipe o c\u00f3digo de barras Meli (11 d\u00edgitos, geralmente iniciando com 47...).');
         if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
+        return;
+      }
+
+      if (automatico) {
+        // Mesma etiqueta lida de novo logo apos registrar (camera ainda apontada): ignora
+        if (repetidoAgora(id)) {
+          mostrarStatus('aguardando', '\u2139\ufe0f O pacote ' + id + ' acabou de ser registrado.');
+          clearTimeout(statusTimer);
+          statusTimer = setTimeout(function() { document.getElementById('status').style.display = 'none'; }, 3000);
+          reiniciarLeitura(1000);
+          return;
+        }
+        pacoteId = id;
+        registrar(true);
         return;
       }
 
@@ -307,56 +356,128 @@
         mostrarStatus('erro', '\u274c Digite o ID antes de confirmar.');
         return;
       }
-      capturarId(valor);
+      capturarId(valor, false);
     }
 
     document.getElementById('input-manual').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();   // o mesmo Enter nao pode confirmar tambem: o ID digitado precisa ser conferido antes
         confirmarManual();
       }
     });
 
-    var registrosLocais = {};
+    // Registros ja feitos nesta pagina. A chave e ID + transportadora + origem:
+    // o mesmo ID so pode ser registrado de novo se a transportadora OU a origem forem diferentes.
+    function chaveRegistro(id) { return id + '|' + turno.transportadora + '|' + turno.origem; }
 
-    function confirmar() {
+    // O historico fica guardado no aparelho ate virar o dia: atualizar a pagina (F5) ou o celular
+    // recarregar a aba NAO libera um pacote que ja foi registrado. As escolhas de turno continuam zerando.
+    var CHAVE_HISTORICO = 'recusa_historico';
+    function hojeStr() { return new Date().toLocaleDateString('pt-BR'); }
+    function lerHistorico() {
+      try {
+        var h = JSON.parse(localStorage.getItem(CHAVE_HISTORICO) || 'null');
+        if (h && h.dia === hojeStr() && h.itens) return h.itens;
+      } catch (e) {}
+      return {};
+    }
+    var registrosLocais = lerHistorico();
+
+    // Consulta a memoria e tambem o que outra aba do mesmo aparelho possa ter registrado
+    function buscarNoHistorico(chave) {
+      return registrosLocais[chave] || lerHistorico()[chave] || null;
+    }
+    function registrarNoHistorico(chave, reg) {
+      var itens = lerHistorico();
+      for (var k in registrosLocais) { if (!itens[k]) itens[k] = registrosLocais[k]; }
+      itens[chave] = reg;
+      registrosLocais = itens;
+      try { localStorage.setItem(CHAVE_HISTORICO, JSON.stringify({ dia: hojeStr(), itens: itens })); } catch (e) {}
+    }
+    var ultimoId = '';
+    var ultimoIdEm = 0;
+    var JANELA_REPETIDO_MS = 6000;   // mesma leitura dentro desse tempo e ignorada (camera relendo a etiqueta)
+    var statusTimer;
+
+    function marcarUltimo(id) { ultimoId = id; ultimoIdEm = Date.now(); }
+    function repetidoAgora(id) { return id === ultimoId && (Date.now() - ultimoIdEm) < JANELA_REPETIDO_MS; }
+
+    // Volta a ler. Na camera espera um pouco para a etiqueta sair da frente.
+    function reiniciarLeitura(atrasoMs) {
+      if (modoAtual === 'fisico') { focarInput(); return; }
+      setTimeout(function() {
+        if (turnoAberto || modoAtual !== 'camera' || pacoteId) return;
+        iniciarCamera();
+      }, atrasoMs || 0);
+    }
+
+    // Cada envio usa o seu proprio iframe: leituras rapidas em sequencia nao cancelam o envio anterior
+    function enviarParaForms() {
+      var nome = 'alvo_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      var ifr = document.createElement('iframe');
+      ifr.name = nome;
+      ifr.style.display = 'none';
+      document.body.appendChild(ifr);
+      var form = document.getElementById('form-envio');
+      form.target = nome;
+      form.submit();
+      setTimeout(function() { if (ifr.parentNode) ifr.parentNode.removeChild(ifr); }, 60000);
+    }
+
+    // Feedback e volta imediata para a proxima leitura
+    function concluirRegistro(id) {
+      resetarUI();
+      mostrarStatus('sucesso', '\u2705 Registrado com sucesso! Pacote ' + id);
+      mostrarPopup('sucesso', '\u2705 Registrado! Pacote ' + id);
+      clearTimeout(statusTimer);
+      statusTimer = setTimeout(function() { document.getElementById('status').style.display = 'none'; }, 3000);
+      reiniciarLeitura(modoAtual === 'camera' ? 1500 : 0);
+    }
+
+    function registrar(automatico) {
+      if (!pacoteId) return;   // nada para registrar (evita registro vazio)
       if (!motivoDefinido || motivo === 'Motivo não definido') {
-        mostrarStatus('erro', '\u26a0\ufe0f N\u00e3o h\u00e1 motivo de recusa selecionado. Para seguir com o registro, escolha um motivo bipando a etiqueta correspondente.');
+        mostrarStatus('erro', '\u26a0\ufe0f N\u00e3o h\u00e1 motivo de recusa selecionado. Para seguir com o registro, escolha o motivo na tela (bot\u00e3o "clique aqui", abaixo do motivo).');
+        if (automatico) { pacoteId = ''; reiniciarLeitura(0); }
         return;
       }
 
-      if (registrosLocais[pacoteId]) {
-        var reg = registrosLocais[pacoteId];
-        var msg = '\u26a0\ufe0f Este pacote j\u00e1 foi registrado \u00e0s ' + reg.hora + ' como "' + reg.motivo + '".\n\nDeseja registrar novamente?';
-        if (!confirm(msg)) {
-          resetar();
-          return;
-        }
-      }
+      var id = pacoteId;
 
-      document.getElementById('btn-confirmar').disabled = true;
-      document.getElementById('btn-rescan').style.display = 'none';
-      mostrarStatus('aguardando', '\u23f3 Registrando...');
+      var chave = chaveRegistro(id);
+      var reg = buscarNoHistorico(chave);
+      if (reg) {
+        // Tudo igual (ID, transportadora e origem): nao deixa registrar e nao oferece confirmar
+        marcarUltimo(id);
+        resetarUI();
+        clearTimeout(statusTimer);
+        mostrarStatus('erro', '\u26d4 Pacote ' + id + ' j\u00e1 foi registrado \u00e0s ' + reg.hora + ' para ' + turno.transportadora + ' / ' + turno.origem + '. N\u00e3o \u00e9 poss\u00edvel registrar novamente.');
+        reiniciarLeitura(1500);
+        return;
+      }
 
       var agora = new Date();
       var horaStr = agora.toLocaleTimeString('pt-BR');
       var dataStr = agora.toLocaleDateString('pt-BR');
 
-      registrosLocais[pacoteId] = { hora: horaStr, motivo: motivo };
+      registrarNoHistorico(chave, { hora: horaStr, motivo: motivo });
+      marcarUltimo(id);
 
+      // Mesmo padrao para todos: Destino = transportadora e Unidade = origem, escolhidas na tela do turno
       document.getElementById('f-motivo').value  = motivo;
-      document.getElementById('f-destino').value = destino;
-      document.getElementById('f-unidade').value = unidade;
+      document.getElementById('f-destino').value = turno.transportadora;
+      document.getElementById('f-unidade').value = turno.origem;
       document.getElementById('f-data').value    = dataStr;
       document.getElementById('f-hora').value    = horaStr;
-      document.getElementById('f-pacote').value  = pacoteId;
-      document.getElementById('form-envio').submit();
+      document.getElementById('f-pacote').value  = id;
+      enviarParaForms();
 
-      setTimeout(function() {
-        mostrarStatus('sucesso', '\u2705 Registrado com sucesso!');
-        setTimeout(resetar, 2500);
-      }, 1200);
+      concluirRegistro(id);
     }
+
+    // Botao "Confirmar" e atalho Enter (usados na digitacao manual)
+    function confirmar() { registrar(false); }
 
     function rescan()  { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
     function resetar() { resetarUI(); if (modoAtual === 'fisico') focarInput(); else iniciarCamera(); }
@@ -382,6 +503,7 @@
     }
 
     function mostrarStatus(tipo, msg) {
+      clearTimeout(statusTimer);
       var el = document.getElementById('status');
       el.className = 'status ' + tipo;
       el.textContent = msg;
@@ -393,9 +515,219 @@
       }
     }
 
-    window.onload = function() { if (isMobile) trocarModo('camera'); else focarInput(); };
+    // ── DADOS DO TURNO: TRANSPORTADORA, ORIGEM E MOTIVO ────────
+    var TRANSPORTADORAS = ['IMILE', 'J&T EXPRESS', 'DOMINALOG', 'JADLOG', 'CARVALIMA', 'LOGGI'];
+
+    // "cod" e o que vai para a planilha. "desc" aparece so como apoio na tela.
+    var ORIGENS = [
+      { cod: 'ARENA',   desc: 'BARUERI' },
+      { cod: 'BRSP02',  desc: 'FULL 02' },
+      { cod: 'BRSP04',  desc: 'FULL 04+14' },
+      { cod: 'BRXSP10', desc: 'GUARULHOS' },
+      { cod: 'BRXSP23', desc: 'VIRA COPOS' },
+      { cod: 'BRXSP24', desc: 'CAJAMAR' },
+      { cod: 'BRXSP5',  desc: 'CRAVINHOS' },
+      { cod: 'BRXSP9',  desc: 'ANTIGO CAJAMAR' },
+      { cod: 'XMG1',    desc: 'CONTAGEM' },
+      { cod: 'XSP2',    desc: 'CAMPINAS - SUMARE' },
+      { cod: 'XSP4',    desc: 'SÃO BERNARDO DO CAMPO' }
+    ];
+
+    // Motivos para escolher na tela (o texto de cada um vem de mapaMotivos)
+    // "Tipo de produto nao aceito" fica por ultimo de proposito, para nao ser escolhido por habito
+    var MOTIVOS_TELA = [
+      { cod: 'R03', icone: '📦' },
+      { cod: 'R04', icone: '📫' },
+      { cod: 'R05', icone: '📋' },
+      { cod: 'R06', icone: '💧' },
+      { cod: 'R07', icone: '⚖️' },
+      { cod: 'R08', icone: '📐' },
+      { cod: 'R01', icone: '🚫' }
+    ];
+
+    var turno = { transportadora: '', origem: '' };
+    var turnoAberto = false;
+    var fluxoIniciado = false;
+    var modoTurno = 'inicial';   // 'inicial' = escolhe tudo | 'motivo' = so troca o motivo
+    var sel = { transp: '', origem: '', motivo: '' };
+
+    function atualizarBadgeTurno() {
+      document.getElementById('turno-texto').textContent = '🚚 ' + turno.transportadora + '  ·  Origem: ' + turno.origem;
+      document.getElementById('turno-badge').style.display = 'flex';
+      document.getElementById('dica-turno').style.display = 'block';
+      document.getElementById('btn-trocar').style.display = 'block';
+    }
+
+    function atualizarAvisoMotivo() {
+      document.getElementById('aviso-motivo').style.display = motivoDefinido ? 'none' : 'block';
+    }
+
+    // Codigo (R01...) do motivo que esta ativo agora, ou '' se nao houver
+    function motivoAtualCod() {
+      if (!motivoDefinido) return '';
+      for (var k in mapaMotivos) {
+        if (mapaMotivos[k] === motivo) return k;
+      }
+      return '';
+    }
+
+    function definirMotivo(cod) {
+      motivo = mapaMotivos[cod];
+      motivoDefinido = true;
+      document.getElementById('motivo-display').textContent = motivo;
+      atualizarAvisoMotivo();
+    }
+
+    function avisarMotivoDefinido() {
+      if (pacoteId) {
+        mostrarStatus('aguardando', '✅ Motivo atualizado. Confirme o registro.');
+      } else {
+        mostrarStatus('aguardando', '✅ Motivo definido! Bipe o código de barras do pacote: o registro é automático.');
+        document.getElementById('link-manual').style.display = 'block';
+      }
+    }
+
+    function criarBotaoOpcao(tipo, valor, titulo, desc, icone) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'opcao' + (tipo === 'motivo' ? ' motivo' : '');
+      if (icone) {
+        var ic = document.createElement('span');
+        ic.className = 'opc-icone';
+        ic.textContent = icone;
+        b.appendChild(ic);
+      }
+      var t = document.createElement('strong');
+      t.textContent = titulo;
+      b.appendChild(t);
+      if (desc) {
+        var s = document.createElement('small');
+        s.textContent = desc;
+        b.appendChild(s);
+      }
+      b.onclick = function() {
+        var irmaos = b.parentNode.children;
+        for (var i = 0; i < irmaos.length; i++) irmaos[i].classList.remove('sel');
+        b.classList.add('sel');
+        sel[tipo] = valor;
+        atualizarBotaoTurno();
+      };
+      return b;
+    }
+
+    function prepararGrupo(tipo, itens, atual) {
+      var c = document.getElementById('opcoes-' + tipo);
+      c.innerHTML = '';
+      itens.forEach(function(it) {
+        var b = criarBotaoOpcao(tipo, it.valor, it.titulo, it.desc, it.icone);
+        if (it.valor === atual) b.classList.add('sel');
+        c.appendChild(b);
+      });
+    }
+
+    function montarMotivos() {
+      prepararGrupo('motivo', MOTIVOS_TELA.map(function(m) {
+        return { valor: m.cod, titulo: mapaMotivos[m.cod], icone: m.icone };
+      }), sel.motivo);
+    }
+
+    // Na primeira tela tudo e obrigatorio; ao trocar o motivo, basta ter um motivo escolhido
+    function atualizarBotaoTurno() {
+      var completo = (modoTurno === 'inicial') ? (sel.transp && sel.origem && sel.motivo) : sel.motivo;
+      document.getElementById('btn-turno-ok').disabled = !completo;
+    }
+
+    function mostrarModal() {
+      atualizarBotaoTurno();
+      document.getElementById('modal-turno').classList.add('visivel');
+      document.getElementById('modal-turno').scrollTop = 0;
+    }
+
+    // Primeira tela: transportadora + origem + motivo
+    function abrirTurno() {
+      modoTurno = 'inicial';
+      turnoAberto = true;
+      pararCamera();
+      sel.transp = '';
+      sel.origem = '';
+      sel.motivo = '';
+      prepararGrupo('transp', TRANSPORTADORAS.map(function(n) { return { valor: n, titulo: n }; }), '');
+      prepararGrupo('origem', ORIGENS.map(function(o) { return { valor: o.cod, titulo: o.cod, desc: o.desc }; }), '');
+      montarMotivos();
+      document.getElementById('grupos-turno').style.display = 'block';
+      document.getElementById('titulo-turno').textContent = '🚚 Dados do turno';
+      document.getElementById('sub-turno').textContent = 'Escolha a transportadora, a origem e o motivo. Depois é só bipar os pacotes.';
+      document.getElementById('btn-turno-ok').textContent = 'Começar';
+      document.getElementById('cancelar-turno').style.display = 'none';
+      mostrarModal();
+    }
+
+    // Trocar so o motivo: transportadora e origem continuam as mesmas
+    function abrirMotivo() {
+      if (turnoAberto) return;
+      modoTurno = 'motivo';
+      turnoAberto = true;
+      pararCamera();
+      sel.motivo = motivoAtualCod();
+      montarMotivos();
+      document.getElementById('grupos-turno').style.display = 'none';
+      document.getElementById('titulo-turno').textContent = '🔄 Escolher outro motivo da recusa';
+      document.getElementById('sub-turno').textContent = 'Transportadora e origem continuam: ' + turno.transportadora + ' · ' + turno.origem + '.';
+      document.getElementById('btn-turno-ok').textContent = 'Salvar';
+      document.getElementById('cancelar-turno').style.display = 'block';
+      mostrarModal();
+    }
+
+    // Volta a ler. Se ja existe um pacote na tela, ele e mantido.
+    function retomarLeitura() {
+      if (pacoteId) {
+        if (modoAtual === 'fisico') focarInput();
+        return;
+      }
+      resetarUI();
+      if (modoAtual === 'fisico') focarInput(); else iniciarCamera();
+    }
+
+    function fecharTurno() {
+      document.getElementById('modal-turno').classList.remove('visivel');
+      turnoAberto = false;
+      retomarLeitura();
+    }
+
+    function confirmarTurno() {
+      if (modoTurno === 'inicial') {
+        if (!sel.transp || !sel.origem || !sel.motivo) return;
+        turno.transportadora = sel.transp;
+        turno.origem = sel.origem;
+        atualizarBadgeTurno();
+      } else if (!sel.motivo) {
+        return;
+      }
+
+      definirMotivo(sel.motivo);
+      document.getElementById('modal-turno').classList.remove('visivel');
+      turnoAberto = false;
+
+      if (!fluxoIniciado) {
+        fluxoIniciado = true;
+        iniciarFluxo();
+      } else {
+        retomarLeitura();
+      }
+      avisarMotivoDefinido();
+    }
+
+    function iniciarFluxo() {
+      if (isMobile) trocarModo('camera'); else focarInput();
+    }
+
+    window.onload = function() {
+      atualizarAvisoMotivo();
+      abrirTurno();
+    };
 
     document.addEventListener('keydown', function(e) {
+      if (turnoAberto) return;
       var btnConfirmar = document.getElementById('btn-confirmar');
       var confirmarVisivel = btnConfirmar.style.display === 'block' && !btnConfirmar.disabled;
       if (!confirmarVisivel) return;
